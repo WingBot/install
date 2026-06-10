@@ -15,6 +15,12 @@ class Tool(BaseTool):
         self.name = "RustDesk远程控制"
         self.type = BaseTool.TYPE_INSTALL
         self.author = "WingBot"
+        self.mode = "install"
+
+    def set_mode(self, mode):
+        self.mode = mode
+        if mode == "uninstall":
+            self.type = BaseTool.TYPE_UNINSTALL
 
     def _asset_arch_keyword(self):
         if osarch == "amd64":
@@ -89,7 +95,19 @@ class Tool(BaseTool):
         PrintUtils.print_success("RustDesk 已安装，并已导入 ID/中继服务器配置。")
         return True
 
-    def run(self):
+    def _uninstall(self):
+        if not self._check_sudo():
+            return False
+
+        PrintUtils.print_info("开始卸载 RustDesk，并清理当前用户配置。")
+        CmdTask("sudo apt remove -y rustdesk", 0).run()
+        CmdTask("sudo apt purge -y rustdesk", 0).run()
+        CmdTask("sudo apt autoremove -y", 0).run()
+        CmdTask("rm -rf ~/.config/rustdesk ~/.local/share/rustdesk", 0).run()
+        PrintUtils.print_success("RustDesk 已卸载，当前用户配置已清理。")
+        return True
+
+    def _install(self):
         if not self._check_sudo():
             return False
 
@@ -102,3 +120,8 @@ class Tool(BaseTool):
             return False
 
         return self._import_config()
+
+    def run(self):
+        if self.mode == "uninstall":
+            return self._uninstall()
+        return self._install()

@@ -50,6 +50,14 @@ tools = {
         "type": INSTALL_OFFICE,
         "tool": "tools/tool_install_rustdesk.py",
         "dep": [1],
+        "mode": "install",
+    },
+    6: {
+        "tip": "一键卸载:RustDesk远程控制(含用户配置)",
+        "type": CONFIG_TOOL,
+        "tool": "tools/tool_install_rustdesk.py",
+        "dep": [],
+        "mode": "uninstall",
     },
 }
 
@@ -141,7 +149,11 @@ def main():
     else:
         if url_prefix:
             download_tools(code, tools, url_prefix)
-        run_tool_file(tools[code]["tool"].replace("/", "."))
+        tool = run_tool_file(tools[code]["tool"].replace("/", "."), authorun=False)
+        if hasattr(tool, "set_mode"):
+            tool.set_mode(tools[code].get("mode", "install"))
+        if tool.init() != False and tool.run() != False:
+            tool.uninit()
 
     if (
         os.environ.get("GITHUB_ACTIONS") != "true"
