@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import ssl
+import sys
+import time
 import shlex
 import urllib.request
 
@@ -77,13 +80,64 @@ class Tool(BaseTool):
             return False
         return True
 
+    def _download_file(self, url, target_path):
+        PrintUtils.print_info("下载地址: {}".format(url))
+        request = urllib.request.Request(url, headers={"User-Agent": "office-install/1.0"})
+        context = ssl._create_unverified_context()
+        temp_path = target_path + ".part"
+        downloaded = 0
+        last_print = 0
+        start = time.time()
+
+        try:
+            with urllib.request.urlopen(request, timeout=30, context=context) as response:
+                total = int(response.headers.get("Content-Length") or 0)
+                with open(temp_path, "wb") as f:
+                    while True:
+                        chunk = response.read(1024 * 256)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        now = time.time()
+                        if now - last_print >= 0.5 or (total and downloaded >= total):
+                            elapsed = max(now - start, 0.001)
+                            speed = downloaded / elapsed / 1024 / 1024
+                            if total:
+                                percent = downloaded * 100 / total
+                                sys.stdout.write(
+                                    "\r下载进度: {percent:6.2f}% {done:.2f}/{total:.2f} MiB {speed:.2f} MiB/s".format(
+                                        percent=percent,
+                                        done=downloaded / 1024 / 1024,
+                                        total=total / 1024 / 1024,
+                                        speed=speed,
+                                    )
+                                )
+                            else:
+                                sys.stdout.write(
+                                    "\r下载进度: {done:.2f} MiB {speed:.2f} MiB/s".format(
+                                        done=downloaded / 1024 / 1024,
+                                        speed=speed,
+                                    )
+                                )
+                            sys.stdout.flush()
+                            last_print = now
+            os.replace(temp_path, target_path)
+            sys.stdout.write("\n")
+            return True
+        except Exception as exc:
+            sys.stdout.write("\n")
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+            PrintUtils.print_error("下载失败: {}".format(exc))
+            return False
+
     def _install_package(self, deb_url):
         deb_path = "/tmp/rustdesk.deb"
         CmdTask("rm -f {}".format(deb_path), 0).run()
-        download_result = CmdTask(
-            "wget --show-progress --progress=bar:force:noscroll '{}' -O {} --no-check-certificate".format(deb_url, deb_path), 0
-        ).run()
-        if download_result[0] != 0:
+        if not self._download_file(deb_url, deb_path):
             PrintUtils.print_error("RustDesk 安装包下载失败。")
             return False
 
