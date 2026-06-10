@@ -1,142 +1,212 @@
-# 一键安装(忘记要Star了，点了再走哦~)
+# Office Install
 
-> ### 大家想要的工具可以在[心愿清单](https://github.com/fishros/install/issues/2)中提出,说不定会有魔法师满足你的心愿
+自有办公软件与基础工具一键安装器。当前分支是 `office`，目标是在 Ubuntu / Debian 电脑上通过一个入口脚本拉起交互菜单，再按需下载安装工具脚本。
 
-## 工具列表
+当前第一阶段已经完成最小链路：
 
-已支持工具列表：
+- 入口脚本：`install`
+- 主程序：`install.py`
+- 公共框架：`tools/base.py`
+- 翻译模块：`tools/translation/translator.py`
+- 第一个测试工具：`tools/tool_install_basic_tools.py`
 
-- 一键安装:ROS(支持ROS和ROS2,树莓派Jetson)  [贡献@小鱼](https://github.com/fishros)
-- 一键安装:VsCode(支持amd64和arm64)  [贡献@小鱼](https://github.com/fishros)
-- 一键安装:github桌面版(小鱼常用的github客户端)  [贡献@小鱼](https://github.com/fishros)
-- 一键安装:nodejs开发环境(通过nodejs可以预览小鱼官网噢)  [贡献@小鱼](https://github.com/fishros)
-- 一键配置:rosdep(小鱼的rosdepc,又快又好用)  [贡献@小鱼](https://github.com/fishros)
-- 一键配置:ROS环境(快速更新ROS环境设置,自动生成环境选择)  [贡献@小鱼](https://github.com/fishros)
-- 一键配置:系统源(更换系统源,支持全版本Ubuntu系统)  [贡献@小鱼](https://github.com/fishros)
-- 一键安装:Docker(支持amd64和arm64)  [贡献@alyssa](https://github.com/alyssa1024)
-- 一键安装:cartographer 贡献 [@小鱼](https://github.com/fishros) & [@Catalpa](https://github.com/Y-zi)
-- 一键安装:微信客户端  [贡献@小鱼](https://github.com/fishros)
+当前菜单中第一个测试项是基础工具包：
 
-
-
-## 使用方法
-```
-source <(wget -qO- http://fishros.com/install)
+```text
+ca-certificates curl wget git unzip xz-utils
 ```
 
-## 如何自动选择(Dockerfile中使用)
+## 工作方式
 
-目前一键安装支持从配置文件自动输入选项，你需要手动运行一次一键安装，使用完毕后会自动产生 `/tmp/fish_install.yaml`。
+入口脚本只做几件事：
 
-使用下面的指令将配置文件拷贝到当前终端即可。
+1. 创建临时目录 `/tmp/office_install`。
+2. 从 `INSTALL_BASE_URL` 下载 `install.py`。
+3. 安装 Python 运行依赖 `python3-distro`、`python3-yaml`。
+4. 执行 `/tmp/office_install/install.py`。
+5. Python 主程序再按需下载 `tools/base.py`、翻译文件和用户选择的工具脚本。
 
-```
-cp /tmp/fish_install.yaml ./
-```
+默认下载根地址是：
 
-### Dockerfile中使用
-
-使用样例如下
-
-```
-RUN apt update \ 
-    && apt install wget python3-yaml -y  \
-    # 安装melodic
-    && echo "chooses:\n" > fish_install.yaml \
-    && echo "- {choose: 1, desc: '一键安装:ROS(支持ROS和ROS2,树莓派Jetson)'}\n" >> fish_install.yaml \
-    && echo "- {choose: 1, desc: 更换源继续安装}\n" >> fish_install.yaml \
-    && echo "- {choose: 2, desc: 清理三方源}\n" >> fish_install.yaml \
-    && echo "- {choose: 1, desc: melodic(ROS1)}\n" >> fish_install.yaml \
-    && echo "- {choose: 1, desc: melodic(ROS1)桌面版}\n" >> fish_install.yaml \
-    && wget http://fishros.com/install  -O fishros && /bin/bash fishros \
-    # 进行最后的清理
-    && rm -rf /var/lib/apt/lists/*  /tmp/* /var/tmp/* \
-    && apt-get clean && apt autoclean 
-```
-一键换源
-
-```
-FROM ubuntu:22.04
-
-# 一键换源
-RUN apt update \
-    && apt install wget python3 python3-yaml -y python3-distro\
-    && echo "chooses:\n" > fish_install.yaml \
-    && echo "- {choose: 5, desc: '一键安装:ROS(支持ROS和ROS2,树莓派Jetson)'}\n" >> fish_install.yaml \
-    && echo "- {choose: 2, desc: 更换源继续安装}\n" >> fish_install.yaml \
-    && echo "- {choose: 1, desc: 清理三方源}\n" >> fish_install.yaml \
-    && wget http://fishros.com/install  -O fishros && /bin/bash fishros \
-    # 进行最后的清理
-    && rm -rf fish_install.yaml \
-    && rm -rf /var/lib/apt/lists/*  /tmp/* /var/tmp/* \
-    && apt-get clean && apt autoclean 
+```bash
+https://install.example.com/
 ```
 
-## 贡献指南
+实际测试或部署时应通过环境变量覆盖：
 
-如果想把自己的常用安装程序变成一键安装程序，可以遵循下面的贡献指南。
-
-### 1.fork工程
-
-fork工程到你的github,然后克隆工程到本地
-
-### 2.新建文件
-
-在本地的工程的tools目录下新建py文件
-
-- 若是安装工具命名为：tool_install_xxx.py
-- 若是配置工具为：tool_config_xxx.py
-
-### 3.编写程序
-
-拷贝模板到你新建的文件：
-
-```
-# -*- coding: utf-8 -*-
-from .base import BaseTool
-from .base import PrintUtils,CmdTask,FileUtils,AptUtils,ChooseTask
-from .base import osversion
-from .base import run_tool_file
-
-class Tool(BaseTool):
-    def __init__(self):
-        self.type = BaseTool.TYPE_INSTALL
-        self.name = "模板工程"
-        self.author = '小鱼'
-
-    def run(self):
-        #正式的运行
-        pass
+```bash
+INSTALL_BASE_URL=http://your-server:18080/
 ```
 
-接着修改type、name、author
+## 在其他电脑测试验证
 
-在run函数中编写逻辑，可以提供给你的工具有：
-1. PrintUtils 打印文字
-2. FileUtils 操作文件
-3. AptUtils 操作Apt
-4. ChooseTask 选择选项
-5. CmdTask 运行命令行工具
-6. run_tool_file 运行其他工具（需要在install.py的tools中配置dep）
+### 方式一：同一局域网内测试
 
-信息：
-1. osversion 系统相关信息
-2. osarch 架构信息 amd64/i386/arm
+在开发电脑或 NAS 上进入项目目录并启动静态 HTTP 服务：
 
-### 4.在install.py中tools中添加一条信息
+```bash
+cd /home/slam/Project/install
+python3 -m http.server 18080
+```
 
-### 5.运行测试
+确认测试电脑能访问该服务。假设服务电脑 IP 是 `192.168.1.10`，在测试电脑上运行：
 
+```bash
+wget -O /tmp/office-install http://192.168.1.10:18080/install
+INSTALL_BASE_URL=http://192.168.1.10:18080/ bash /tmp/office-install
+```
 
-## 贡献名单
+进入菜单后选择 `1`，测试基础工具包安装链路。
 
-- 一键安装ROS [小鱼](https://github.com/fishros)
-- 一键安装github-deskto [小鱼](https://github.com/fishros)
-- 一键配置rosdep [小鱼](https://github.com/fishros)
-- 一键配置ros环境 [小鱼](https://github.com/fishros)
-- 一键配置系统源 [小鱼](https://github.com/fishros)
-- 一键安装nodejs [小鱼](https://github.com/fishros)
-- 一键安装vscode [小鱼](https://github.com/fishros)
-- 一键安装:Docker(支持amd64和arm64) [@alyssa](https://github.com/alyssa1024)
+测试电脑要求：
 
+- Ubuntu / Debian 系统。
+- 能访问部署安装器的 HTTP 地址。
+- 当前用户可以使用 `sudo`。
+- 系统 apt 源可用。
 
+### 方式二：直接用 GitHub Raw 测试
+
+如果 `office` 分支已经推送到 GitHub，可以在测试电脑上运行：
+
+```bash
+wget -O /tmp/office-install https://raw.githubusercontent.com/WingBot/install/office/install
+INSTALL_BASE_URL=https://raw.githubusercontent.com/WingBot/install/office/ bash /tmp/office-install
+```
+
+这种方式适合快速验证 GitHub 上的当前分支，但测试电脑需要能访问 GitHub Raw。
+
+### 方式三：用公网域名测试
+
+当后续部署了真实域名，例如 `https://install.example.com/`，测试命令可以变成：
+
+```bash
+wget -O /tmp/office-install https://install.example.com/install
+INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+```
+
+如果入口脚本里的默认 `INSTALL_BASE_URL` 已经改成真实域名，也可以直接运行：
+
+```bash
+wget -O /tmp/office-install https://install.example.com/install
+bash /tmp/office-install
+```
+
+## 安装器 HTTP 服务和软件源的关系
+
+本项目里的 HTTP 服务只负责托管安装器文件，例如：
+
+```text
+install
+install.py
+tools/base.py
+tools/tool_install_basic_tools.py
+tools/translation/translator.py
+tools/translation/assets/zh_CN.py
+tools/translation/assets/en_US.py
+```
+
+它默认不托管要安装的软件包，也不自动替代系统软件源。
+
+也就是说：
+
+- `INSTALL_BASE_URL` 是安装器脚本根地址。
+- `apt install` 仍然访问目标电脑配置的 apt 软件源。
+- 如果某个工具脚本下载 `.deb`、压缩包或访问软件官网，那么访问地址由该工具脚本决定。
+
+如果测试电脑访问国外网站较慢，可以按下面几种方式处理：
+
+1. 使用国内 apt 源：在测试电脑上提前配置清华、阿里云、中科大等 Ubuntu/Debian 镜像源。
+2. 在工具脚本中优先使用国内可访问的官方镜像或可信镜像。
+3. 在内网服务器或 NAS 上缓存 `.deb`、压缩包等安装文件，然后让工具脚本下载内网地址。
+4. 在网络环境中配置 HTTP/HTTPS 代理，并让工具脚本或 apt 使用代理。
+5. 后续新增一个“配置系统源/代理”的菜单项，在安装办公软件前先完成网络配置。
+
+不要把 `INSTALL_BASE_URL` 理解成“所有软件包的镜像源”。它只是安装器自身的脚本分发地址。是否托管第三方软件包，需要每个工具脚本单独设计。
+
+## 部署在 NAS 时的访问权限问题
+
+NAS 只需要对测试电脑提供只读 HTTP 访问。测试电脑通过 `wget` 下载脚本，不需要写入 NAS。
+
+常见部署方式：
+
+### 局域网公开只读
+
+适合内网测试。NAS 上启动静态文件服务，让同一局域网电脑访问：
+
+```bash
+cd /path/to/install
+python3 -m http.server 18080
+```
+
+然后测试电脑通过 `http://NAS_IP:18080/` 访问。注意 NAS 文件权限要允许运行 HTTP 服务的用户读取项目文件。
+
+### 公网 HTTPS 访问
+
+适合外部电脑测试。推荐结构：
+
+```text
+测试电脑
+  |
+  | HTTPS
+  v
+公网服务器 / Nginx 或 Caddy
+  |
+  | frp / VPN / 内网穿透
+  v
+NAS 静态文件服务
+```
+
+公网入口建议使用 HTTPS，不建议直接暴露 NAS 管理端口。
+
+### 私有访问控制
+
+如果不想公开安装器文件，可以选择：
+
+- 只允许局域网、VPN、Tailscale、WireGuard 内访问。
+- 在 Nginx/Caddy 上做 IP 白名单。
+- 使用带时效的签名 URL。
+- 使用 Basic Auth，但当前入口脚本还没有内置账号密码参数，需要额外改造 `wget` 命令。
+
+不建议把 GitHub Token、NAS 密码或长期有效的私有下载凭据写死在 `install` 脚本中，因为测试电脑上可以直接看到这些内容。
+
+如果部署在私有 GitHub 仓库，测试电脑下载 Raw 文件通常需要认证。为了简化测试，建议把安装器脚本部署到可控的内网 HTTP 服务，或者只公开 `office` 分支中的安装器脚本文件。
+
+## 自动选择测试
+
+可以用配置文件自动选择菜单项，便于链路测试。
+
+自动选择退出：
+
+```bash
+cat > /tmp/office_install_choose_exit.yaml <<'EOF'
+chooses:
+- choose: 0
+  desc: quit
+time: test
+EOF
+
+OFFICE_INSTALL_CONFIG=/tmp/office_install_choose_exit.yaml INSTALL_BASE_URL=http://127.0.0.1:18080/ python3 install.py
+```
+
+自动选择第 1 项基础工具包：
+
+```bash
+cat > /tmp/office_install_choose_basic.yaml <<'EOF'
+chooses:
+- choose: 1
+  desc: basic tools
+time: test
+EOF
+
+OFFICE_INSTALL_CONFIG=/tmp/office_install_choose_basic.yaml INSTALL_BASE_URL=http://127.0.0.1:18080/ python3 install.py
+```
+
+真实安装基础工具包需要当前用户可以使用 `sudo`。
+
+## 后续计划
+
+- 确认真实 `INSTALL_BASE_URL` 域名。
+- 增加 WPS、飞书、frpc 等办公和网络工具。
+- 增加系统源和代理配置菜单。
+- 设计内网缓存包或镜像源方案。
