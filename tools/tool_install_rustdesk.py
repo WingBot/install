@@ -44,14 +44,31 @@ class Tool(BaseTool):
             PrintUtils.print_error("获取 RustDesk release 信息失败: {}".format(exc))
             return None
 
+        deb_assets = self._candidate_deb_assets(release, arch_keyword)
+        if not deb_assets:
+            PrintUtils.print_error("未找到适合当前架构的 RustDesk deb 安装包。")
+            return None
+
+        for asset in deb_assets:
+            name = asset.get("name", "")
+            if "sciter" not in name.lower():
+                PrintUtils.print_info("已选择 RustDesk 主线 deb 包: {}".format(name))
+                return asset.get("browser_download_url")
+
+        fallback = deb_assets[0]
+        PrintUtils.print_warn(
+            "未找到非 sciter 主线 deb 包，回退使用: {}".format(fallback.get("name", ""))
+        )
+        return fallback.get("browser_download_url")
+
+    def _candidate_deb_assets(self, release, arch_keyword):
+        deb_assets = []
         for asset in release.get("assets", []):
             name = asset.get("name", "")
             url = asset.get("browser_download_url", "")
             if name.endswith(".deb") and arch_keyword in name and url:
-                return url
-
-        PrintUtils.print_error("未找到适合当前架构的 RustDesk deb 安装包。")
-        return None
+                deb_assets.append(asset)
+        return deb_assets
 
     def _check_sudo(self):
         sudo_check = CmdTask("sudo -n true", 0).run()
