@@ -2,7 +2,6 @@
 import json
 import os
 import socket
-import ssl
 import sys
 import tarfile
 import time
@@ -24,6 +23,35 @@ class Tool(BaseTool):
         self.name = "frpc SSH内网穿透"
         self.type = BaseTool.TYPE_INSTALL
         self.author = "WingBot"
+
+    def _proxy_opener(self):
+        proxies = {}
+        http_proxy = os.environ.get("http_proxy") or os.environ.get("HTTP_PROXY")
+        https_proxy = os.environ.get("https_proxy") or os.environ.get("HTTPS_PROXY")
+        all_proxy = os.environ.get("all_proxy") or os.environ.get("ALL_PROXY")
+        if http_proxy:
+            proxies["http"] = http_proxy
+        if https_proxy:
+            proxies["https"] = https_proxy
+        if all_proxy:
+            proxies.setdefault("http", all_proxy)
+            proxies.setdefault("https", all_proxy)
+
+        if not proxies and self._local_proxy_available("127.0.0.1", 7897):
+            proxy_url = "http://127.0.0.1:7897"
+            proxies = {"http": proxy_url, "https": proxy_url}
+            PrintUtils.print_info("检测到本地代理，下载将使用: {}".format(proxy_url))
+
+        if proxies:
+            return urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
+        return urllib.request.build_opener()
+
+    def _local_proxy_available(self, host, port):
+        try:
+            with socket.create_connection((host, port), timeout=0.3):
+                return True
+        except OSError:
+            return False
 
     def _check_sudo(self):
         sudo_check = CmdTask("sudo -n true", 0).run()
@@ -60,7 +88,7 @@ class Tool(BaseTool):
 
         PrintUtils.print_info("正在获取 frp 最新 release 信息...")
         try:
-            with urllib.request.urlopen(FRP_RELEASE_API, timeout=20) as response:
+            with self._proxy_opener().open(FRP_RELEASE_API, timeout=60) as response:
                 release = json.loads(response.read().decode("utf-8"))
         except Exception as exc:
             PrintUtils.print_error("获取 frp release 信息失败: {}".format(exc))
@@ -96,14 +124,13 @@ class Tool(BaseTool):
     def _download_file(self, url, target_path):
         PrintUtils.print_info("下载地址: {}".format(url))
         request = urllib.request.Request(url, headers={"User-Agent": "office-install/1.0"})
-        context = ssl._create_unverified_context()
         temp_path = target_path + ".part"
         downloaded = 0
         last_print = 0
         start = time.time()
 
         try:
-            with urllib.request.urlopen(request, timeout=30, context=context) as response:
+            with self._proxy_opener().open(request, timeout=120) as response:
                 total = int(response.headers.get("Content-Length") or 0)
                 with open(temp_path, "wb") as f:
                     while True:

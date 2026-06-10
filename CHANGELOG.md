@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+### Python 下载代理兼容
+
+- frpc 和 RustDesk 的 Python 流式下载显式支持 `http_proxy`、`https_proxy`、`all_proxy` 环境变量。
+- 如果未设置代理但检测到 `127.0.0.1:7897` 可用，会自动使用该本地代理下载 GitHub release 资源。
+- 放宽 release API 和安装包下载超时时间，避免 GitHub 直连或代理握手较慢时报错。
+
 ### 修复大文件下载卡住
 
 - frpc 和 RustDesk 安装包下载改为 Python 原生流式下载。
