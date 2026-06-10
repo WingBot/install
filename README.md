@@ -16,6 +16,14 @@
 ca-certificates curl wget git unzip xz-utils
 ```
 
+当前已新增 RustDesk 菜单项：
+
+```text
+[5]: 一键安装并配置 RustDesk 远程控制
+```
+
+RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置。
+
 ## 工作方式
 
 入口脚本只做几件事：
@@ -81,15 +89,13 @@ INSTALL_BASE_URL=https://raw.githubusercontent.com/WingBot/install/office/ bash 
 当后续部署了真实域名，例如 `https://install.example.com/`，测试命令可以变成：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
 ```
 
 如果入口脚本里的默认 `INSTALL_BASE_URL` 已经改成真实域名，也可以直接运行：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && bash /tmp/office-install
 ```
 
 ## 安装器 HTTP 服务和软件源的关系
@@ -171,6 +177,84 @@ NAS 静态文件服务
 不建议把 GitHub Token、NAS 密码或长期有效的私有下载凭据写死在 `install` 脚本中，因为测试电脑上可以直接看到这些内容。
 
 如果部署在私有 GitHub 仓库，测试电脑下载 Raw 文件通常需要认证。为了简化测试，建议把安装器脚本部署到可控的内网 HTTP 服务，或者只公开 `office` 分支中的安装器脚本文件。
+
+## 异机常见问题
+
+### 默认域名无法访问
+
+如果测试电脑上直接运行 `bash install`，入口脚本会使用默认地址：
+
+```bash
+https://install.example.com/
+```
+
+这个地址目前只是占位域名，没有部署真实服务时会下载失败。异机测试必须显式指定 `INSTALL_BASE_URL`：
+
+```bash
+INSTALL_BASE_URL=http://192.168.1.10:18080/ bash /tmp/office-install
+```
+
+或者使用 GitHub Raw：
+
+```bash
+INSTALL_BASE_URL=https://raw.githubusercontent.com/WingBot/install/office/ bash /tmp/office-install
+```
+
+### GitHub Raw 下载失败
+
+如果看到 `raw.githubusercontent.com` 连接失败、超时或 404，按下面顺序检查：
+
+1. 确认 `office` 分支已经推送到 GitHub。
+2. 确认测试电脑能访问 `https://raw.githubusercontent.com/WingBot/install/office/install`。
+3. 如果仓库是私有仓库，Raw 地址通常需要认证；建议改用内网 HTTP 服务或公网 HTTPS 服务测试。
+4. 如果网络无法访问 GitHub Raw，改用局域网方式：在开发电脑启动 `python3 -m http.server 18080`。
+
+### 局域网 HTTP 服务无法访问
+
+如果测试电脑访问 `http://192.168.1.10:18080/install` 失败：
+
+1. 确认服务端正在项目根目录运行 `python3 -m http.server 18080`。
+2. 确认 IP 地址是服务端的局域网 IP，不是 `127.0.0.1`。
+3. 在测试电脑浏览器或命令行访问：
+
+```bash
+wget -S --spider http://192.168.1.10:18080/install
+```
+
+4. 检查服务端防火墙是否放行 18080 端口。
+5. 确认两台电脑在同一局域网，或者路由/VPN 已经打通。
+
+### sudo 权限问题
+
+第 1 项基础工具包会执行 apt 安装，需要 sudo 权限。如果看到类似：
+
+```text
+sudo: a password is required
+当前会话无法无交互使用 sudo
+```
+
+说明当前运行环境不能交互输入 sudo 密码。请在测试电脑的真实终端里运行安装器，不要在无法输入密码的后台任务里运行。正常情况下选择菜单项后输入当前用户的 sudo 密码即可。
+
+### apt 源或网络问题
+
+如果工具脚本已经启动，但 `sudo apt update` 或 `sudo apt install` 失败，问题通常不在 `INSTALL_BASE_URL`，而在测试电脑自己的 apt 源或网络：
+
+1. 先手动执行：
+
+```bash
+sudo apt update
+```
+
+2. 如果 apt 源慢或不可达，先切换到可用镜像源。
+3. 如果公司/校园网络需要代理，先配置系统代理或 apt 代理。
+4. 再重新运行安装器选择第 1 项。
+
+### 快速判断问题位置
+
+- 下载 `/tmp/office-install` 失败：入口脚本地址不可达。
+- 下载 `install.py`、`tools/base.py` 失败：`INSTALL_BASE_URL` 配错或服务不可达。
+- 菜单能出现，但工具脚本下载失败：服务目录缺少对应 `tools/tool_install_xxx.py`。
+- 工具脚本已启动，但 apt 失败：测试电脑 apt 源、sudo 或系统网络问题。
 
 ## 自动选择测试
 

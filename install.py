@@ -45,6 +45,12 @@ tools = {
         "tool": "tools/tool_install_vscode.py",
         "dep": [],
     },
+    5: {
+        "tip": "一键安装并配置:RustDesk远程控制",
+        "type": INSTALL_OFFICE,
+        "tool": "tools/tool_install_rustdesk.py",
+        "dep": [1],
+    },
 }
 
 
