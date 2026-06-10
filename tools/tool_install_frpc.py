@@ -174,6 +174,14 @@ class Tool(BaseTool):
             PrintUtils.print_error("下载失败: {}".format(exc))
             return False
 
+    def _safe_extract(self, tar, target_dir):
+        target_dir = os.path.abspath(target_dir)
+        for member in tar.getmembers():
+            member_path = os.path.abspath(os.path.join(target_dir, member.name))
+            if not member_path.startswith(target_dir + os.sep):
+                raise RuntimeError("tar archive contains unsafe path: {}".format(member.name))
+        tar.extractall(target_dir)
+
     def _install_binary(self, url):
         archive_path = "/tmp/frp.tar.gz"
         extract_dir = "/tmp/frp_extract"

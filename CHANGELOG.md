@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+### 修复 frpc 解压函数缺失
+
+- 补回 frpc 安装包的 `_safe_extract()` 安全解压函数。
+- 修复下载成功后报 `Tool object has no attribute _safe_extract` 的问题。
+
 ### Python 下载代理兼容
 
 - frpc 和 RustDesk 的 Python 流式下载显式支持 `http_proxy`、`https_proxy`、`all_proxy` 环境变量。
