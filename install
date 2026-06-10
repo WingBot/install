@@ -5,7 +5,8 @@ export INSTALL_BASE_URL="${INSTALL_BASE_URL:-https://install.example.com/}"
 export OFFICE_INSTALL_TMP_DIR="${OFFICE_INSTALL_TMP_DIR:-/tmp/office_install}"
 
 mkdir -p "$OFFICE_INSTALL_TMP_DIR/tools/translation/assets"
-wget "${INSTALL_BASE_URL%/}/install.py" -O "$OFFICE_INSTALL_TMP_DIR/install.py" 2>>/dev/null
+echo "Downloading: ${INSTALL_BASE_URL%/}/install.py"
+wget --show-progress --progress=bar:force:noscroll "${INSTALL_BASE_URL%/}/install.py" -O "$OFFICE_INSTALL_TMP_DIR/install.py"
 source /etc/profile
 
 SUDO=''

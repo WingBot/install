@@ -1643,7 +1643,7 @@ def run_tool_file(file, authorun=True):
 def run_tool_url(url, url_prefix):
     install_tmp_dir = os.environ.get("OFFICE_INSTALL_TMP_DIR", "/tmp/office_install")
     CmdTask(
-        "wget {} -O {}/tools/{} --no-check-certificate".format(
+        "wget --show-progress --progress=bar:force:noscroll {} -O {}/tools/{} --no-check-certificate".format(
             url, install_tmp_dir, url[url.rfind("/") + 1 :]
         )
     ).run()
@@ -1656,7 +1656,7 @@ def download_tools(id, tools, url_prefix):
     url = tools[id]["tool"]
     url = os.path.join(url_prefix, url)
     CmdTask(
-        "wget {} -O {}/tools/{} --no-check-certificate".format(
+        "wget --show-progress --progress=bar:force:noscroll {} -O {}/tools/{} --no-check-certificate".format(
             url, install_tmp_dir, url[url.rfind("/") + 1 :]
         )
     ).run()
@@ -1665,7 +1665,7 @@ def download_tools(id, tools, url_prefix):
         url = tools[dep]["tool"]
         url = os.path.join(url_prefix, url)
         CmdTask(
-            "wget {} -O {}/tools/{} --no-check-certificate".format(
+            "wget --show-progress --progress=bar:force:noscroll {} -O {}/tools/{} --no-check-certificate".format(
                 url, install_tmp_dir, url[url.rfind("/") + 1 :]
             )
         ).run()

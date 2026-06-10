@@ -81,7 +81,7 @@ class Tool(BaseTool):
         deb_path = "/tmp/rustdesk.deb"
         CmdTask("rm -f {}".format(deb_path), 0).run()
         download_result = CmdTask(
-            "wget '{}' -O {} --no-check-certificate".format(deb_url, deb_path), 0
+            "wget --show-progress --progress=bar:force:noscroll '{}' -O {} --no-check-certificate".format(deb_url, deb_path), 0
         ).run()
         if download_result[0] != 0:
             PrintUtils.print_error("RustDesk 安装包下载失败。")

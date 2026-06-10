@@ -95,7 +95,7 @@ class Tool(BaseTool):
         extract_dir = "/tmp/frp_extract"
         CmdTask("rm -rf {} {}".format(archive_path, extract_dir), 0).run()
         download_result = CmdTask(
-            "wget '{}' -O {} --no-check-certificate".format(url, archive_path), 0
+            "wget --show-progress --progress=bar:force:noscroll '{}' -O {} --no-check-certificate".format(url, archive_path), 0
         ).run()
         if download_result[0] != 0:
             PrintUtils.print_error("frp 安装包下载失败。")

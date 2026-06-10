@@ -86,13 +86,15 @@ def download_runtime_files(url_prefix):
     os.system("mkdir -p {}/tools/translation/assets".format(INSTALL_TMP_DIR))
     if not url_prefix:
         return
+    print("Downloading: {}".format(base_url))
     os.system(
-        "wget {} -O {}/{} --no-check-certificate".format(
+        "wget --show-progress --progress=bar:force:noscroll {} -O {}/{} --no-check-certificate".format(
             base_url, INSTALL_TMP_DIR, base_url.replace(url_prefix, "")
         )
     )
+    print("Downloading: {}".format(translator_url))
     os.system(
-        "wget {} -O {}/{} --no-check-certificate".format(
+        "wget --show-progress --progress=bar:force:noscroll {} -O {}/{} --no-check-certificate".format(
             translator_url, INSTALL_TMP_DIR, translator_url.replace(url_prefix, "")
         )
     )

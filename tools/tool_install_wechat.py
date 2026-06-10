@@ -48,7 +48,7 @@ newgrp docker
             CmdTask('rm -rf /tmp/wechat_deb',os_command=True).run()
             PrintUtils.print_success("已为你安装完成wechat~")
         if code==3:
-            CmdTask('wget https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb -O /tmp/wechat.deb',os_command=True).run()
+            CmdTask('wget --show-progress --progress=bar:force:noscroll https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb -O /tmp/wechat.deb',os_command=True).run()
             CmdTask('sudo dpkg -i /tmp/wechat.deb',os_command=True).run()
             CmdTask('apt --fix-broken install -y',os_command=True).run()
             PrintUtils.print_success("已为你安装完成wechat-linux版本~")

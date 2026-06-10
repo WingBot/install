@@ -41,7 +41,7 @@ class Linguist:
                 # Use /tmp/ directory directly to avoid permission issues
                 temp_file = "/tmp/office_install_lang_{}.py".format(lang)
                 final_path = "{}/{}".format(install_tmp_dir, lang_url.format(lang).replace(url_prefix, ''))
-                download_cmd = "wget {} -O {} --no-check-certificate".format(lang_url.format(lang), temp_file)
+                download_cmd = "wget --show-progress --progress=bar:force:noscroll {} -O {} --no-check-certificate".format(lang_url.format(lang), temp_file)
                 result = CmdTask(download_cmd).run()
                 # Move file to final destination if download was successful
                 if result[0] == 0:
