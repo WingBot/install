@@ -38,7 +38,7 @@ class ConfigHelper:
         if self.record_file == None:
             # 首先检查环境变量
             self.record_file = os.environ.get(
-                "FISH_INSTALL_CONFIG", "./fish_install.yaml"
+                "OFFICE_INSTALL_CONFIG", "./office_install.yaml"
             )
         self.default_input_queue = self.get_default_queue(self.record_file)
 
@@ -58,8 +58,8 @@ class ConfigHelper:
         config_yaml["time"] = str(time.time())
 
         # 先写入临时文件，再使用sudo移动到目标位置
-        temp_path = "/tmp/fish_install_temp.yaml"
-        target_path = "/tmp/fish_install.yaml"
+        temp_path = "/tmp/office_install_temp.yaml"
+        target_path = "/tmp/office_install.yaml"
         try:
             with open(temp_path, "w", encoding="utf-8") as f:
                 if have_yaml_module:
@@ -1605,8 +1605,8 @@ class BaseTool:
 
         self.name = name
         self.type = tool_type
-        self.author = "小鱼"
-        self.author_email = "fishros@foxmail.com"
+        self.author = "WingBot"
+        self.author_email = ""
 
     def init(self):
         # 初始化部分
@@ -1641,21 +1641,23 @@ def run_tool_file(file, authorun=True):
 
 
 def run_tool_url(url, url_prefix):
+    install_tmp_dir = os.environ.get("OFFICE_INSTALL_TMP_DIR", "/tmp/office_install")
     CmdTask(
-        "wget {} -O /tmp/fishinstall/tools/{} --no-check-certificate".format(
-            url, url[url.rfind("/") + 1 :]
+        "wget {} -O {}/tools/{} --no-check-certificate".format(
+            url, install_tmp_dir, url[url.rfind("/") + 1 :]
         )
     ).run()
     run_tool_file(url.replace(url_prefix, "").replace("/", "."))
 
 
 def download_tools(id, tools, url_prefix):
+    install_tmp_dir = os.environ.get("OFFICE_INSTALL_TMP_DIR", "/tmp/office_install")
     # download tool
     url = tools[id]["tool"]
     url = os.path.join(url_prefix, url)
     CmdTask(
-        "wget {} -O /tmp/fishinstall/tools/{} --no-check-certificate".format(
-            url, url[url.rfind("/") + 1 :]
+        "wget {} -O {}/tools/{} --no-check-certificate".format(
+            url, install_tmp_dir, url[url.rfind("/") + 1 :]
         )
     ).run()
     # download dep
@@ -1663,8 +1665,8 @@ def download_tools(id, tools, url_prefix):
         url = tools[dep]["tool"]
         url = os.path.join(url_prefix, url)
         CmdTask(
-            "wget {} -O /tmp/fishinstall/tools/{} --no-check-certificate".format(
-                url, url[url.rfind("/") + 1 :]
+            "wget {} -O {}/tools/{} --no-check-certificate".format(
+                url, install_tmp_dir, url[url.rfind("/") + 1 :]
             )
         ).run()
 

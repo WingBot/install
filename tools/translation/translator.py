@@ -12,7 +12,8 @@ import subprocess
 import time
 
 _suported_languages = ['zh_CN', 'en_US']
-url_prefix = os.environ.get('FISHROS_URL','')
+url_prefix = os.environ.get('INSTALL_BASE_URL','')
+install_tmp_dir = os.environ.get('OFFICE_INSTALL_TMP_DIR', '/tmp/office_install')
 lang_url = os.path.join(url_prefix,'tools/translation/assets/{}.py')
 
 COUNTRY_CODE_MAPPING = {
@@ -33,13 +34,13 @@ class Linguist:
         # Load the translation file.
         self.lang = self._currentLocale
         # Create directory for downloads
-        CmdTask("mkdir -p /tmp/fishinstall/tools/translation/assets").run()
+        CmdTask("mkdir -p {}/tools/translation/assets".format(install_tmp_dir)).run()
         if url_prefix:
             for lang in _suported_languages:
                 # Add timeout and retry mechanism for downloading language files
                 # Use /tmp/ directory directly to avoid permission issues
-                temp_file = "/tmp/fishros_lang_{}.py".format(lang)
-                final_path = "/tmp/fishinstall/{}".format(lang_url.format(lang).replace(url_prefix, ''))
+                temp_file = "/tmp/office_install_lang_{}.py".format(lang)
+                final_path = "{}/{}".format(install_tmp_dir, lang_url.format(lang).replace(url_prefix, ''))
                 download_cmd = "wget {} -O {} --no-check-certificate".format(lang_url.format(lang), temp_file)
                 result = CmdTask(download_cmd).run()
                 # Move file to final destination if download was successful
@@ -79,7 +80,7 @@ class Linguist:
     
     def getLocalFromIP(self) -> str:
         local_str = ""
-        temp_file = "/tmp/fishros_check_country.xml"
+        temp_file = "/tmp/office_install_check_country.xml"
         try:
             # Add timeout for IP detection
             result = subprocess.run(["wget", "--header=Accept: application/xml", "--no-check-certificate", 
