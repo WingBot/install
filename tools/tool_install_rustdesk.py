@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import shlex
 import urllib.request
 
 from .base import BaseTool, CmdTask, PrintUtils, osarch
@@ -87,12 +88,35 @@ class Tool(BaseTool):
             PrintUtils.print_error("未找到 rustdesk 命令，无法导入服务器配置。")
             return False
 
-        import_result = CmdTask("rustdesk --config '{}'".format(RUSTDESK_CONFIG), 0).run()
+        import_result = CmdTask(
+            "sudo rustdesk --config {}".format(shlex.quote(RUSTDESK_CONFIG)), 0
+        ).run()
         if import_result[0] != 0:
             PrintUtils.print_error("RustDesk 服务器配置导入失败，请打开 RustDesk 后手动导入配置。")
             return False
 
-        PrintUtils.print_success("RustDesk 已安装，并已导入 ID/中继服务器配置。")
+        PrintUtils.print_success("RustDesk 已导入 ID/中继服务器配置。")
+        return True
+
+    def _target_username(self):
+        username = os.environ.get("SUDO_USER") or os.environ.get("LOGNAME") or os.environ.get("USER") or "user"
+        if username == "root":
+            username = "user"
+        return username[:1].upper() + username[1:]
+
+    def _fixed_password(self):
+        return "{}#2026".format(self._target_username())
+
+    def _set_permanent_password(self):
+        password = self._fixed_password()
+        result = CmdTask(
+            "sudo rustdesk --password {}".format(shlex.quote(password)), 0
+        ).run()
+        if result[0] != 0:
+            PrintUtils.print_error("RustDesk 固定密码设置失败，请确认 RustDesk 已安装并正在运行服务。")
+            return False
+
+        PrintUtils.print_success("RustDesk 固定密码已设置为: {}".format(password))
         return True
 
     def _uninstall(self):
@@ -119,7 +143,9 @@ class Tool(BaseTool):
         if not self._install_package(deb_url):
             return False
 
-        return self._import_config()
+        if not self._import_config():
+            return False
+        return self._set_permanent_password()
 
     def run(self):
         if self.mode == "uninstall":

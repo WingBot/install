@@ -22,7 +22,7 @@ ca-certificates curl wget git unzip xz-utils
 [5]: 一键安装并配置 RustDesk 远程控制
 ```
 
-RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置。
+RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置，并设置固定密码。密码规则为：用户名首字母大写后拼接 `#2026`，例如用户 `zzr` 的密码为 `Zzr#2026`。
 
 ## 工作方式
 
