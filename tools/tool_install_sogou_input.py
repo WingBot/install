@@ -14,8 +14,8 @@ from .base import BaseTool, CmdTask, PrintUtils, osarch
 
 SOGOU_LINUX_PAGE = "https://shurufa.sogou.com/linux"
 FALLBACK_DOWNLOADS = {
-    "amd64": "https://ime-sec.gtimg.com/pc/dl/gzindex/1680521603/sogoupinyin_4.2.1.145_amd64.deb",
-    "arm64": "https://ime-sec.gtimg.com/pc/dl/gzindex/1680521473/sogoupinyin_4.2.1.145_arm64.deb",
+    "amd64": "https://ime.gtimg.com/pc/dl/gzindex/1680521603/sogoupinyin_4.2.1.145_amd64.deb",
+    "arm64": "https://ime.gtimg.com/pc/dl/gzindex/1680521473/sogoupinyin_4.2.1.145_arm64.deb",
 }
 
 
@@ -78,6 +78,11 @@ class Tool(BaseTool):
             return "arm64", "arm64"
         return None, None
 
+    def _normalize_download_url(self, url):
+        if "://ime-sec.gtimg.com/" in url:
+            return url.replace("://ime-sec.gtimg.com/", "://ime.gtimg.com/")
+        return url
+
     def _latest_deb_url(self):
         display_arch, deb_arch = self._arch_name()
         if deb_arch is None:
@@ -97,6 +102,7 @@ class Tool(BaseTool):
                     name = item.get("name", "")
                     link = item.get("link", "")
                     if link and (name == display_arch or link.endswith("_{}.deb".format(deb_arch))):
+                        link = self._normalize_download_url(link)
                         PrintUtils.print_info("已选择搜狗输入法安装包: {}".format(link.rsplit("/", 1)[-1]))
                         return link
         except Exception as exc:
