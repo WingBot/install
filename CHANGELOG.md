@@ -4,6 +4,20 @@
 
 ## Unreleased
 
+### frpc SSH 内网穿透安装器
+
+- 新增菜单项 `[7]`：安装并配置 frpc SSH 内网穿透。
+- frpc 服务端配置参考本机配置：`frpc.jtcx.cn:7000`。
+- 自动把本机 `127.0.0.1:22` 映射到远端 TCP 端口。
+- 远端端口从 `2500` 开始探测，已占用则顺延递增，最大尝试到 `2599`。
+- 安装 frpc 到 `/usr/local/bin/frpc`，配置写入 `/etc/frp/frpc.ini`。
+- 创建 `/etc/systemd/system/frpc.service` 并启用开机自启。
+
+### RustDesk 开机自启
+
+- RustDesk 安装完成后尝试执行 `systemctl enable --now rustdesk`。
+- 如果安装包未提供 `rustdesk.service`，会提示警告但不阻断服务器配置和固定密码设置。
+
 ### RustDesk 包选择优化
 
 - RustDesk 安装工具优先选择 GitHub release 中当前架构对应的主线 `.deb` 包。

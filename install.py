@@ -59,6 +59,12 @@ tools = {
         "dep": [],
         "mode": "uninstall",
     },
+    7: {
+        "tip": "一键安装并配置:frpc SSH内网穿透",
+        "type": INSTALL_NETWORK,
+        "tool": "tools/tool_install_frpc.py",
+        "dep": [1],
+    },
 }
 
 

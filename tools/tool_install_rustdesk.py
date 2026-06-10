@@ -136,6 +136,15 @@ class Tool(BaseTool):
         PrintUtils.print_success("RustDesk 固定密码已设置为: {}".format(password))
         return True
 
+    def _enable_autostart(self):
+        result = CmdTask("sudo systemctl enable --now rustdesk", 0).run()
+        if result[0] == 0:
+            PrintUtils.print_success("RustDesk systemd 服务已设置为开机自启。")
+            return True
+
+        PrintUtils.print_warn("未能启用 rustdesk systemd 服务，可能当前安装包未提供该服务。")
+        return False
+
     def _uninstall(self):
         if not self._check_sudo():
             return False
@@ -160,6 +169,7 @@ class Tool(BaseTool):
         if not self._install_package(deb_url):
             return False
 
+        self._enable_autostart()
         if not self._import_config():
             return False
         return self._set_permanent_password()

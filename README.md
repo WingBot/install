@@ -20,9 +20,18 @@ ca-certificates curl wget git unzip xz-utils
 
 ```text
 [5]: 一键安装并配置 RustDesk 远程控制
+[6]: 一键卸载 RustDesk 远程控制
 ```
 
-RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置，并设置固定密码。密码规则为：用户名首字母大写后拼接 `#2026`，例如用户 `zzr` 的密码为 `Zzr#2026`。
+RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的主线 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置、启用 systemd 开机自启，并设置固定密码。密码规则为：用户名首字母大写后拼接 `#2026`，例如用户 `zzr` 的密码为 `Zzr#2026`。
+
+当前已新增 frpc 菜单项：
+
+```text
+[7]: 一键安装并配置 frpc SSH 内网穿透
+```
+
+frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远端 TCP 端口。远端端口从 `2500` 开始探测，如果端口已被占用则顺延递增，最大尝试到 `2599`。安装完成后会写入 `/etc/frp/frpc.ini` 和 `/etc/systemd/system/frpc.service`，并执行 `systemctl enable --now frpc` 设置开机自启。
 
 ## 工作方式
 
