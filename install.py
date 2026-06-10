@@ -65,6 +65,12 @@ tools = {
         "tool": "tools/tool_install_frpc.py",
         "dep": [1],
     },
+    8: {
+        "tip": "一键安装并配置:搜狗输入法",
+        "type": INSTALL_OFFICE,
+        "tool": "tools/tool_install_sogou_input.py",
+        "dep": [1],
+    },
 }
 
 
