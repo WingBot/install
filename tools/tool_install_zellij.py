@@ -246,8 +246,8 @@ copy_on_select true
 copy_clipboard "system"
 copy_command "office-zellij-copy"
 show_startup_tips false
-pane_frames true
-simplified_ui false
+pane_frames false
+simplified_ui true
 default_layout "compact"
 """
         with open(config_path, "w", encoding="utf-8") as f:
@@ -274,5 +274,6 @@ default_layout "compact"
             return False
 
         PrintUtils.print_success("Zellij 安装完成。运行 zellij 即可进入，滚轮可查看历史输出，选择文本会复制到系统剪贴板。")
+        PrintUtils.print_success("已启用 simplified_ui 并关闭 pane_frames，避免缺少 Nerd Font/Powerline 字体时 Tab 栏出现乱码。")
         PrintUtils.print_success("Ctrl+Shift+C 由终端模拟器处理；若鼠标选择被 Zellij 捕获，可按住 Shift 后选择再复制。")
         return True

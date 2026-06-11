@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+### 修复 Zellij Tab 乱码与补充测试说明
+
+- Zellij 默认配置改为 `simplified_ui true` 并关闭 `pane_frames`，避免缺少 Nerd Font/Powerline 字体时 Tab 标签前后出现乱码。
+- README 增加 Zellij 已安装机器的 Tab 乱码手动修复方式。
+- README 增加开启 Clash/系统代理/TUN 时的局域网安装器绕过代理命令。
+- README 增加搜狗输入法安装后无法输入中文的常见原因和排查命令。
+
 ### Zellij 与 Oh My Zsh 安装器
 
 - 新增菜单项 `[9]`：安装并配置 Zellij 终端复用器。

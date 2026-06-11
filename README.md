@@ -41,6 +41,17 @@ frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远
 
 搜狗输入法工具会从搜狗 Linux 官方页面解析当前架构对应的 `.deb` 下载地址，安装 fcitx 相关依赖，并为当前用户写入 fcitx 输入法环境变量。安装完成后通常需要注销并重新登录。
 
+当前已新增终端环境菜单项：
+
+```text
+[9]: 一键安装并配置 Zellij 终端复用器
+[10]: 一键安装并配置 Oh My Zsh
+```
+
+Zellij 工具会从 GitHub 最新 release 下载当前架构安装包，写入默认 `~/.config/zellij/config.kdl`，启用滚轮查看历史输出、选择文本复制到系统剪贴板，并默认使用兼容字符配置，避免缺少 Nerd Font/Powerline 字体时 Tab 标签显示乱码。
+
+Oh My Zsh 工具会安装 zsh、git、Powerline 字体，克隆 Oh My Zsh 官方框架和常用插件，并写入默认 `.zshrc`。
+
 下载行为：入口脚本、运行时文件、菜单工具脚本和当前菜单中的软件安装包都会在终端显示下载地址、进度条和实时速度，便于判断网络是否正常。
 
 ## 工作方式
@@ -81,6 +92,16 @@ python3 -m http.server 18080
 ```bash
 wget -O /tmp/office-install http://192.168.1.10:18080/install
 INSTALL_BASE_URL=http://192.168.1.10:18080/ bash /tmp/office-install
+```
+
+如果测试电脑开启了 Clash、系统代理或 TUN，访问局域网安装器时建议显式绕过代理。假设服务电脑 IP 是 `192.168.5.218`：
+
+```bash
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install
+```
+
+```bash
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install
 ```
 
 进入菜单后选择 `1`，测试基础工具包安装链路。
@@ -253,6 +274,55 @@ sudo: a password is required
 ```
 
 说明当前运行环境不能交互输入 sudo 密码。请在测试电脑的真实终端里运行安装器，不要在无法输入密码的后台任务里运行。正常情况下选择菜单项后输入当前用户的 sudo 密码即可。
+
+### Zellij Tab 标签乱码
+
+如果 Zellij 顶部 `Tab #1` 标签前后出现乱码，通常是终端字体缺少 Nerd Font/Powerline 符号。最新安装器默认写入兼容字符配置；已经安装过的电脑可以重新运行菜单 `[9]`，安装器会备份旧配置并重写 `~/.config/zellij/config.kdl`。
+
+也可以手动修改：
+
+```bash
+sed -i 's/^simplified_ui .*/simplified_ui true/; s/^pane_frames .*/pane_frames false/' ~/.config/zellij/config.kdl
+```
+
+然后退出并重新进入 `zellij`。
+
+### 开启代理后局域网地址被代理
+
+如果测试电脑开启了 Clash 系统代理或 TUN，`wget http://192.168.x.x:18080/install` 可能会被送进代理，表现为连接 `127.0.0.1:7897` 后返回 `502 Bad Gateway`。这种情况下先不要用一行 `wget ... && INSTALL_BASE_URL=... bash ...`，建议分两步执行并显式设置 `no_proxy/NO_PROXY`：
+
+```bash
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install
+```
+
+```bash
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install
+```
+
+如果服务端 IP 不是 `192.168.5.218`，把命令里的 IP 全部替换成实际服务端 IP。
+
+### 搜狗输入法安装后不能输入中文
+
+如果搜狗输入法已经安装，`fcitx` 配置里也能添加搜狗，但重启后仍不能输入中文，常见原因如下：
+
+1. 当前桌面会话没有真正使用 `fcitx`，仍在使用 `ibus` 或 `fcitx5`。
+2. `fcitx` 进程没有随登录会话启动。
+3. `GTK_IM_MODULE`、`QT_IM_MODULE`、`XMODIFIERS` 没有在当前图形登录会话中生效。
+4. GNOME Wayland 会话兼容性较差，可尝试在登录界面切换到 `Ubuntu on Xorg` 后再测试。
+5. fcitx 配置中虽然添加了搜狗，但没有把搜狗放在输入法列表中并切换到该输入法。
+
+建议在测试电脑上执行：
+
+```bash
+echo $XDG_SESSION_TYPE
+echo $GTK_IM_MODULE
+echo $QT_IM_MODULE
+echo $XMODIFIERS
+pgrep -a fcitx
+im-config -m
+```
+
+期望至少看到 `fcitx` 进程存在，且输入法环境变量指向 `fcitx`。如果是 Wayland 会话且无法输入，优先切换到 Xorg 会话排查。
 
 ### apt 源或网络问题
 
