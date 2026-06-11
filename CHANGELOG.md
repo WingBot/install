@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+### 补强搜狗输入法 fcitx 会话配置
+
+- 搜狗输入法安装器增加 `fcitx-tools`、`fcitx-ui-classic`、`fcitx-module-dbus`、`fcitx-module-kimpanel` 依赖。
+- 安装后显式写入 `~/.xinputrc` 为 `run_im fcitx`，减少 `im-config` 与 `ibus` 残留配置冲突。
+- 安装后写入 `~/.config/autostart/fcitx.desktop`，确保图形登录后启动 `fcitx -r -d`。
+- README 根据实际 X11/fcitx 环境输出，补充搜狗 addon、当前输入法和 ibus 竞争排查命令。
+
 ### 修复 Zellij Tab 乱码与补充测试说明
 
 - Zellij 默认配置改为 `simplified_ui true` 并关闭 `pane_frames`，避免缺少 Nerd Font/Powerline 字体时 Tab 标签前后出现乱码。

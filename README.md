@@ -303,15 +303,7 @@ no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,loca
 
 ### 搜狗输入法安装后不能输入中文
 
-如果搜狗输入法已经安装，`fcitx` 配置里也能添加搜狗，但重启后仍不能输入中文，常见原因如下：
-
-1. 当前桌面会话没有真正使用 `fcitx`，仍在使用 `ibus` 或 `fcitx5`。
-2. `fcitx` 进程没有随登录会话启动。
-3. `GTK_IM_MODULE`、`QT_IM_MODULE`、`XMODIFIERS` 没有在当前图形登录会话中生效。
-4. GNOME Wayland 会话兼容性较差，可尝试在登录界面切换到 `Ubuntu on Xorg` 后再测试。
-5. fcitx 配置中虽然添加了搜狗，但没有把搜狗放在输入法列表中并切换到该输入法。
-
-建议在测试电脑上执行：
+如果搜狗输入法已经安装，`fcitx` 配置里也能添加搜狗，但重启后仍不能输入中文，先确认会话是否真的由 `fcitx` 接管：
 
 ```bash
 echo $XDG_SESSION_TYPE
@@ -320,9 +312,38 @@ echo $QT_IM_MODULE
 echo $XMODIFIERS
 pgrep -a fcitx
 im-config -m
+cat ~/.xinputrc 2>/dev/null
 ```
 
-期望至少看到 `fcitx` 进程存在，且输入法环境变量指向 `fcitx`。如果是 Wayland 会话且无法输入，优先切换到 Xorg 会话排查。
+如果输出类似下面这样，说明 X11、环境变量和 `fcitx` 进程基本正常：
+
+```text
+x11
+fcitx
+fcitx
+@im=fcitx
+/usr/bin/fcitx -r
+```
+
+这种情况下重点排查搜狗引擎是否加载成功、当前输入法是否切到搜狗，以及 `ibus` 是否仍在竞争：
+
+```bash
+fcitx-remote -n
+fcitx-diagnose | tee /tmp/fcitx-diagnose.log
+dpkg -l | grep -E 'sogoupinyin|fcitx|ibus'
+ls /usr/share/fcitx/addon | grep -i sogou
+pgrep -a ibus
+```
+
+处理建议：
+
+1. 重新运行菜单 `[8]`，新版安装器会写入 `~/.xinputrc` 为 `run_im fcitx`，并增加 `~/.config/autostart/fcitx.desktop`。
+2. 注销并重新登录，不只是在终端里重开 shell。
+3. 打开 `fcitx-config-gtk3`，确认输入法列表里有“搜狗拼音”，并把它放在列表中；测试时用 `Ctrl+Space` 或配置里的切换键切到搜狗。
+4. 如果 `pgrep -a ibus` 仍有进程，可临时执行 `ibus exit` 后再测试。
+5. 如果 `fcitx-diagnose` 里搜狗 addon 加载失败，问题通常是搜狗 `.deb` 与当前 Ubuntu/Debian 版本或 Qt 依赖不兼容，需要根据诊断日志继续处理。
+
+如果是 Wayland 会话且无法输入，优先在登录界面切换到 `Ubuntu on Xorg` 后再测试。
 
 ### apt 源或网络问题
 

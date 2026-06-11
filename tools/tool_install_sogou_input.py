@@ -3,6 +3,7 @@ import json
 import os
 import pwd
 import re
+import shlex
 import socket
 import sys
 import time
@@ -167,6 +168,10 @@ class Tool(BaseTool):
             "fcitx",
             "fcitx-bin",
             "fcitx-config-gtk",
+            "fcitx-tools",
+            "fcitx-ui-classic",
+            "fcitx-module-dbus",
+            "fcitx-module-kimpanel",
             "fcitx-frontend-gtk2",
             "fcitx-frontend-gtk3",
             "fcitx-frontend-qt5",
@@ -219,13 +224,47 @@ export XMODIFIERS=@im=fcitx
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(data)
                 if user != "root":
-                    CmdTask("sudo chown {}:{} {}".format(user, user, path), 0).run()
+                    CmdTask("sudo chown {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(path)), 0).run()
             except Exception as exc:
                 PrintUtils.print_warn("写入 {} 失败: {}".format(path, exc))
 
-        CmdTask("sudo -u {} im-config -n fcitx".format(user) if user != "root" else "im-config -n fcitx", 0).run()
-        CmdTask("sudo systemctl --user enable fcitx", 0).run()
-        PrintUtils.print_success("已配置当前用户使用 fcitx。请注销并重新登录后启用搜狗输入法。")
+        xinputrc_path = os.path.join(home, ".xinputrc")
+        try:
+            if os.path.exists(xinputrc_path):
+                with open(xinputrc_path, "r", encoding="utf-8", errors="ignore") as f:
+                    old_xinputrc = f.read().strip()
+                if old_xinputrc and old_xinputrc != "run_im fcitx":
+                    backup_path = xinputrc_path + ".bak.office-install-" + time.strftime("%Y%m%d%H%M%S")
+                    os.replace(xinputrc_path, backup_path)
+                    PrintUtils.print_warn("检测到已有 .xinputrc，已备份: {}".format(backup_path))
+            with open(xinputrc_path, "w", encoding="utf-8") as f:
+                f.write("run_im fcitx\n")
+            if user != "root":
+                CmdTask("sudo chown {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(xinputrc_path)), 0).run()
+        except Exception as exc:
+            PrintUtils.print_warn("写入 {} 失败: {}".format(xinputrc_path, exc))
+
+        autostart_dir = os.path.join(home, ".config", "autostart")
+        autostart_path = os.path.join(autostart_dir, "fcitx.desktop")
+        try:
+            os.makedirs(autostart_dir, exist_ok=True)
+            desktop = """[Desktop Entry]
+Type=Application
+Name=Fcitx
+Exec=fcitx -r -d
+Terminal=false
+X-GNOME-Autostart-enabled=true
+"""
+            with open(autostart_path, "w", encoding="utf-8") as f:
+                f.write(desktop)
+            if user != "root":
+                CmdTask("sudo chown -R {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(autostart_dir)), 0).run()
+        except Exception as exc:
+            PrintUtils.print_warn("写入 {} 失败: {}".format(autostart_path, exc))
+
+        CmdTask("sudo -u {} im-config -n fcitx".format(shlex.quote(user)) if user != "root" else "im-config -n fcitx", 0).run()
+        CmdTask("sudo -u {} fcitx -r -d".format(shlex.quote(user)) if user != "root" else "fcitx -r -d", 0).run()
+        PrintUtils.print_success("已配置当前用户使用 fcitx，并写入 .xinputrc 与桌面自启动。请注销并重新登录后启用搜狗输入法。")
         return True
 
     def run(self):
