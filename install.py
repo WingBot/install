@@ -71,6 +71,18 @@ tools = {
         "tool": "tools/tool_install_sogou_input.py",
         "dep": [1],
     },
+    9: {
+        "tip": "一键安装并配置:Zellij终端复用器",
+        "type": INSTALL_DEV,
+        "tool": "tools/tool_install_zellij.py",
+        "dep": [1],
+    },
+    10: {
+        "tip": "一键安装并配置:Oh My Zsh",
+        "type": CONFIG_TOOL,
+        "tool": "tools/tool_install_ohmyzsh.py",
+        "dep": [1],
+    },
 }
 
 

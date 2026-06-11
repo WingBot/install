@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+### Zellij 与 Oh My Zsh 安装器
+
+- 新增菜单项 `[9]`：安装并配置 Zellij 终端复用器。
+- Zellij 从 GitHub 最新 release 自动选择当前架构安装包，安装到 `/usr/local/bin/zellij`。
+- 写入默认 `~/.config/zellij/config.kdl`，启用鼠标滚轮查看历史输出、选择文本自动复制到系统剪贴板。
+- 新增 `/usr/local/bin/office-zellij-copy`，Wayland 使用 `wl-copy`，X11 使用 `xclip`。
+- 新增菜单项 `[10]`：安装并配置 Oh My Zsh。
+- Oh My Zsh 会安装 zsh、git、Powerline 字体，克隆官方框架和 `zsh-autosuggestions`、`zsh-syntax-highlighting` 插件。
+- 写入默认 `.zshrc`，并尝试把当前用户默认 shell 切换为 zsh。
+
 ### 修复搜狗输入法下载 403
 
 - 搜狗输入法官方页面当前返回的 `ime-sec.gtimg.com` 安装包链接会出现 `403 Forbidden`。
