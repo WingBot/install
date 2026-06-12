@@ -6,7 +6,7 @@
 
 - Zotero 安装后不再手写指向 `chrome/icons/default/default256.png` 的图标路径。
 - 安装器会优先把 Zotero 彩色图标安装到系统 hicolor 图标主题，并使用 `Icon=zotero` 写入桌面入口。
-- 办公套件菜单新增“修复 Zotero 图标和桌面入口”，已安装机器无需重装即可修复黑色图标。
+- Zotero 安装流程自动合并图标和桌面入口修复，不再单独暴露修复菜单项。
 
 ## 2026-06-12 14:06:54 +0800 - Fix Zotero and WPS downloads
 

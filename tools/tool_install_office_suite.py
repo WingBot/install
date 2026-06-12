@@ -485,7 +485,6 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
             3: "安装 Obsidian",
             4: "安装 WPS Office",
             5: "安装中文字体和 Windows 常用字体",
-            6: "修复 Zotero 图标和桌面入口",
         }
         code, _ = ChooseTask(choices, "请选择要安装的办公软件:", False).run()
         if code == 1:
@@ -502,7 +501,5 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
             return self.install_wps()
         if code == 5:
             return self.install_fonts()
-        if code == 6:
-            return self.repair_zotero_launcher()
         PrintUtils.print_warn("已取消办公软件安装")
         return False
