@@ -283,7 +283,8 @@ def main():
             tool.uninit()
 
     if (
-        os.environ.get("GITHUB_ACTIONS") != "true"
+        code != 0
+        and os.environ.get("GITHUB_ACTIONS") != "true"
         and os.environ.get("OFFICE_INSTALL_CONFIG") is None
     ):
         config_helper.gen_config_file()

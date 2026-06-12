@@ -57,10 +57,14 @@ class ConfigHelper:
         config_yaml["chooses"] = chooses
         config_yaml["time"] = str(time.time())
 
-        # 先写入临时文件，再使用sudo移动到目标位置
-        temp_path = "/tmp/office_install_temp.yaml"
-        target_path = "/tmp/office_install.yaml"
+        target_path = os.environ.get(
+            "OFFICE_INSTALL_RECORD_FILE", "/tmp/office_install.yaml"
+        )
+        temp_path = "{}.{}.tmp".format(target_path, os.getpid())
         try:
+            target_dir = os.path.dirname(target_path)
+            if target_dir:
+                os.makedirs(target_dir, exist_ok=True)
             with open(temp_path, "w", encoding="utf-8") as f:
                 if have_yaml_module:
                     yaml.dump(config_yaml, f, allow_unicode=True)
@@ -69,29 +73,14 @@ class ConfigHelper:
             if os.path.exists(target_path):
                 print("检测到已存在的配置文件，直接覆盖: {}".format(target_path))
 
-            # 先尝试删除目标文件（如果存在），避免mv命令的交互提示
-            if os.path.exists(target_path):
-                try:
-                    os.remove(target_path)
-                except PermissionError:
-                    # 如果普通权限无法删除，则使用sudo
-                    print("使用sudo权限删除已存在的配置文件...")
-                    os.system("sudo rm -f {}".format(target_path))
-
-            # 使用mv命令移动文件，避免权限问题
-            result = os.system("mv {} {}".format(temp_path, target_path))
-            if result == 0:
-                print("配置文件已保存至: {}".format(target_path))
-            else:
-                # 如果普通权限移动失败，则尝试使用sudo
-                print("尝试使用sudo权限保存配置文件...")
-                result = os.system("sudo mv {} {}".format(temp_path, target_path))
-                if result == 0:
-                    print("配置文件已保存至: {} (使用sudo权限)".format(target_path))
-                else:
-                    print("配置文件保存失败")
+            os.replace(temp_path, target_path)
+            print("配置文件已保存至: {}".format(target_path))
+        except PermissionError:
+            print("配置文件保存失败: 当前用户无权覆盖 {}".format(target_path))
+            print("可手动删除旧文件后重试: sudo rm -f {}".format(target_path))
         except Exception as e:
             print("配置文件生成过程中发生错误: {}".format(str(e)))
+        finally:
             # 清理临时文件（如果存在）
             if os.path.exists(temp_path):
                 os.remove(temp_path)
