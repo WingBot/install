@@ -7,81 +7,176 @@ url_prefix = os.environ.get("INSTALL_BASE_URL", "https://install.example.com/")
 base_url = os.path.join(url_prefix, "tools/base.py")
 translator_url = os.path.join(url_prefix, "tools/translation/translator.py")
 
-INSTALL_OFFICE = 0
-INSTALL_DEV = 1
-CONFIG_TOOL = 2
-INSTALL_NETWORK = 3
+INSTALL_ROS = 0  # 安装ROS相关
+INSTALL_SOFTWARE = 1  # 安装软件
+CONFIG_TOOL = 2  # 配置相关
+INSTALL_AI = 3  # AI相关
+INSTALL_NETWORK = 4  # 网络工具
+INSTALL_OFFICE = 5  # 自有办公软件
+
 
 tools_type_map = {
-    INSTALL_OFFICE: "办公软件",
-    INSTALL_DEV: "开发工具",
+    INSTALL_ROS: "ROS相关",
+    INSTALL_AI: "AI板块",
+    INSTALL_SOFTWARE: "常用软件",
     CONFIG_TOOL: "配置工具",
     INSTALL_NETWORK: "网络工具",
+    INSTALL_OFFICE: "办公软件",
 }
 
 
 tools = {
     1: {
+        "tip": "一键安装(推荐):ROS(支持ROS/ROS2,树莓派Jetson)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_install_ros.py",
+        "dep": [4, 5],
+    },
+    2: {
+        "tip": "一键安装:github桌面版(小鱼常用的github客户端)",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_github_desktop.py",
+        "dep": [],
+    },
+    3: {
+        "tip": "一键安装:rosdep(小鱼的rosdepc,又快又好用)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_config_rosdep.py",
+        "dep": [],
+    },
+    4: {
+        "tip": "一键配置:ROS环境(快速更新ROS环境设置,自动生成环境选择)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_config_rosenv.py",
+        "dep": [],
+    },
+    5: {
+        "tip": "一键配置:系统源(更换系统源,支持全版本Ubuntu系统)",
+        "type": CONFIG_TOOL,
+        "tool": "tools/tool_config_system_source.py",
+        "dep": [1],
+    },
+    6: {
+        "tip": "一键安装:NodeJs环境",
+        "type": INSTALL_AI,
+        "tool": "tools/tool_install_nodejs.py",
+        "dep": [],
+    },
+    7: {
+        "tip": "一键安装:VsCode开发工具",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_vscode.py",
+        "dep": [],
+    },
+    8: {
+        "tip": "一键安装:Docker",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_docker.py",
+        "dep": [],
+    },
+    9: {
+        "tip": "一键安装:Cartographer(18 20测试通过,16未测. updateTime 20240125)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_install_cartographer.py",
+        "dep": [3],
+    },
+    10: {
+        "tip": "一键安装:微信(可以在Linux上使用的微信)",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_wechat.py",
+        "dep": [8],
+    },
+    11: {
+        "tip": "一键安装:ROS Docker版(支持所有版本ROS/ROS2)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_install_ros_with_docker.py",
+        "dep": [7, 8],
+    },
+    12: {
+        "tip": "一键安装:PlateformIO MicroROS开发环境(支持Fishbot)",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_micros_fishbot_env.py",
+        "dep": [],
+    },
+    13: {
+        "tip": "一键配置:python国内源",
+        "type": CONFIG_TOOL,
+        "tool": "tools/tool_config_python_source.py",
+        "dep": [],
+    },
+    14: {
+        "tip": "一键安装:科学上网代理工具",
+        "type": INSTALL_AI,
+        "tool": "tools/tool_install_proxy_tool.py",
+        "dep": [8],
+    },
+    15: {
+        "tip": "一键安装：QQ for Linux",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_qq.py",
+        "dep": [],
+    },
+    16: {
+        "tip": "一键安装：系统自带ROS (！！警告！！仅供特殊情况下使用)",
+        "type": INSTALL_ROS,
+        "tool": "tools/tool_install_ros1_systemdefault.py",
+        "dep": [5],
+    },
+    17: {
+        "tip": "一键配置: Docker代理(支持VPN+代理服务两种模式)",
+        "type": CONFIG_TOOL,
+        "tool": "tools/tool_config_docker_proxy.py",
+        "dep": [],
+    },
+    18: {
+        "tip": "一键安装/卸载:OpenCode(AI编程助手)",
+        "type": INSTALL_AI,
+        "tool": "tools/tool_install_opencode.py",
+        "dep": [6],
+    },
+    19: {
         "tip": "一键安装:基础工具包(curl/wget/git/unzip等)",
         "type": CONFIG_TOOL,
         "tool": "tools/tool_install_basic_tools.py",
         "dep": [],
     },
-    2: {
-        "tip": "一键安装:微信(可以在Linux上使用的微信)",
-        "type": INSTALL_OFFICE,
-        "tool": "tools/tool_install_wechat.py",
-        "dep": [],
-    },
-    3: {
-        "tip": "一键安装:QQ for Linux",
-        "type": INSTALL_OFFICE,
-        "tool": "tools/tool_install_qq.py",
-        "dep": [],
-    },
-    4: {
-        "tip": "一键安装:VS Code",
-        "type": INSTALL_DEV,
-        "tool": "tools/tool_install_vscode.py",
-        "dep": [],
-    },
-    5: {
+    20: {
         "tip": "一键安装并配置:RustDesk远程控制",
         "type": INSTALL_OFFICE,
         "tool": "tools/tool_install_rustdesk.py",
-        "dep": [1],
+        "dep": [19],
         "mode": "install",
     },
-    6: {
+    21: {
         "tip": "一键卸载:RustDesk远程控制(含用户配置)",
         "type": CONFIG_TOOL,
         "tool": "tools/tool_install_rustdesk.py",
         "dep": [],
         "mode": "uninstall",
     },
-    7: {
+    22: {
         "tip": "一键安装并配置:frpc SSH内网穿透",
         "type": INSTALL_NETWORK,
         "tool": "tools/tool_install_frpc.py",
-        "dep": [1],
+        "dep": [19],
     },
-    8: {
+    23: {
         "tip": "一键安装并配置:搜狗输入法",
         "type": INSTALL_OFFICE,
         "tool": "tools/tool_install_sogou_input.py",
-        "dep": [1],
+        "dep": [19],
     },
-    9: {
+    24: {
         "tip": "一键安装并配置:Zellij终端复用器",
-        "type": INSTALL_DEV,
+        "type": INSTALL_SOFTWARE,
         "tool": "tools/tool_install_zellij.py",
-        "dep": [1],
+        "dep": [19],
     },
-    10: {
+    25: {
         "tip": "一键安装并配置:Oh My Zsh",
         "type": CONFIG_TOOL,
         "tool": "tools/tool_install_ohmyzsh.py",
-        "dep": [1],
+        "dep": [19],
     },
 }
 

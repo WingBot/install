@@ -2,15 +2,13 @@
 
 自有办公软件与基础工具一键安装器。当前分支是 `office`，目标是在 Ubuntu / Debian 电脑上通过一个入口脚本拉起交互菜单，再按需下载安装工具脚本。
 
-当前第一阶段已经完成最小链路：
+当前 `office` 分支已恢复 FishROS 原有工具入口，并在后面追加自有办公软件与基础工具：
 
-- 入口脚本：`install`
-- 主程序：`install.py`
-- 公共框架：`tools/base.py`
-- 翻译模块：`tools/translation/translator.py`
-- 第一个测试工具：`tools/tool_install_basic_tools.py`
+- `[1]`-`[18]`：FishROS 原有 ROS、Docker、系统源、开发工具、AI 工具等入口。
+- `[19]`：基础工具包，用于测试安装器链路。
+- `[20]` 以后：自有办公与网络工具。
 
-当前菜单中第一个测试项是基础工具包：
+基础工具包内容：
 
 ```text
 ca-certificates curl wget git unzip xz-utils
@@ -19,8 +17,8 @@ ca-certificates curl wget git unzip xz-utils
 当前已新增 RustDesk 菜单项：
 
 ```text
-[5]: 一键安装并配置 RustDesk 远程控制
-[6]: 一键卸载 RustDesk 远程控制
+[20]: 一键安装并配置 RustDesk 远程控制
+[21]: 一键卸载 RustDesk 远程控制
 ```
 
 RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的主线 `.deb` 安装包，安装完成后自动导入预置 ID/中继服务器配置、启用 systemd 开机自启，并设置固定密码。密码规则为：用户名首字母大写后拼接 `#2026`，例如用户 `zzr` 的密码为 `Zzr#2026`。
@@ -28,7 +26,7 @@ RustDesk 工具会从 GitHub 最新 release 下载当前架构对应的主线 `.
 当前已新增 frpc 菜单项：
 
 ```text
-[7]: 一键安装并配置 frpc SSH 内网穿透
+[22]: 一键安装并配置 frpc SSH 内网穿透
 ```
 
 frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远端 TCP 端口。远端端口从 `2500` 开始探测，如果端口已被占用则顺延递增，最大尝试到 `2599`。安装完成后会写入 `/etc/frp/frpc.ini` 和 `/etc/systemd/system/frpc.service`，并执行 `systemctl enable --now frpc` 设置开机自启。
@@ -36,7 +34,7 @@ frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远
 当前已新增搜狗输入法菜单项：
 
 ```text
-[8]: 一键安装并配置 搜狗输入法
+[23]: 一键安装并配置 搜狗输入法
 ```
 
 搜狗输入法工具会从搜狗 Linux 官方页面解析当前架构对应的 `.deb` 下载地址，安装 fcitx 相关依赖，并为当前用户写入 fcitx 输入法环境变量。安装完成后通常需要注销并重新登录。
@@ -44,8 +42,8 @@ frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远
 当前已新增终端环境菜单项：
 
 ```text
-[9]: 一键安装并配置 Zellij 终端复用器
-[10]: 一键安装并配置 Oh My Zsh
+[24]: 一键安装并配置 Zellij 终端复用器
+[25]: 一键安装并配置 Oh My Zsh
 ```
 
 Zellij 工具会从 GitHub 最新 release 下载当前架构安装包，写入默认 `~/.config/zellij/config.kdl`，启用滚轮查看历史输出、选择文本复制到系统剪贴板，并默认使用兼容字符配置，避免缺少 Nerd Font/Powerline 字体时 Tab 标签显示乱码。
@@ -104,7 +102,7 @@ no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,loca
 no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install
 ```
 
-进入菜单后选择 `1`，测试基础工具包安装链路。
+进入菜单后选择 `19`，测试基础工具包安装链路。
 
 测试电脑要求：
 
@@ -266,7 +264,7 @@ wget -S --spider http://192.168.1.10:18080/install
 
 ### sudo 权限问题
 
-第 1 项基础工具包会执行 apt 安装，需要 sudo 权限。如果看到类似：
+第 19 项基础工具包会执行 apt 安装，需要 sudo 权限。如果看到类似：
 
 ```text
 sudo: a password is required
@@ -277,7 +275,7 @@ sudo: a password is required
 
 ### Zellij Tab 标签乱码
 
-如果 Zellij 顶部 `Tab #1` 标签前后出现乱码，通常是终端字体缺少 Nerd Font/Powerline 符号。最新安装器默认写入兼容字符配置；已经安装过的电脑可以重新运行菜单 `[9]`，安装器会备份旧配置并重写 `~/.config/zellij/config.kdl`。
+如果 Zellij 顶部 `Tab #1` 标签前后出现乱码，通常是终端字体缺少 Nerd Font/Powerline 符号。最新安装器默认写入兼容字符配置；已经安装过的电脑可以重新运行菜单 `[24]`，安装器会备份旧配置并重写 `~/.config/zellij/config.kdl`。
 
 也可以手动修改：
 
@@ -337,7 +335,7 @@ pgrep -a ibus
 
 处理建议：
 
-1. 重新运行菜单 `[8]`，新版安装器会写入 `~/.xinputrc` 为 `run_im fcitx`，并增加 `~/.config/autostart/fcitx.desktop`。
+1. 重新运行菜单 `[23]`，新版安装器会写入 `~/.xinputrc` 为 `run_im fcitx`，并增加 `~/.config/autostart/fcitx.desktop`。
 2. 注销并重新登录，不只是在终端里重开 shell。
 3. 打开 `fcitx-config-gtk3`，确认输入法列表里有“搜狗拼音”，并把它放在列表中；测试时用 `Ctrl+Space` 或配置里的切换键切到搜狗。
 4. 如果 `pgrep -a ibus` 仍有进程，可临时执行 `ibus exit` 后再测试。
@@ -383,12 +381,12 @@ EOF
 OFFICE_INSTALL_CONFIG=/tmp/office_install_choose_exit.yaml INSTALL_BASE_URL=http://127.0.0.1:18080/ python3 install.py
 ```
 
-自动选择第 1 项基础工具包：
+自动选择第 19 项基础工具包：
 
 ```bash
 cat > /tmp/office_install_choose_basic.yaml <<'EOF'
 chooses:
-- choose: 1
+- choose: 19
   desc: basic tools
 time: test
 EOF

@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+### 恢复 FishROS 原有工具菜单
+
+- 恢复 office 迁移前 FishROS 原有 `[1]`-`[18]` 工具入口，包括 ROS、rosdep、ROS 环境、系统源、Docker、Cartographer、ROS Docker、NodeJs、OpenCode 等。
+- 自有办公增强工具整体后移到 `[19]` 以后，避免破坏 FishROS 原工具之间的依赖编号。
+- README 同步更新菜单编号，基础链路测试改为选择 `[19]` 基础工具包。
+
 ### 补齐搜狗 logf 配置并简化 fcitx profile
 
 - 搜狗输入法安装后自动补齐 `~/.config/sogoupinyin/logf.conf`，避免启动时反复提示 `parse logf.conf fail`。
