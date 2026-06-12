@@ -226,26 +226,74 @@ class Tool(BaseTool):
             return False
         self._run_cmd("sudo ln -sf /opt/zotero/zotero /usr/local/bin/zotero", 0)
 
-        desktop = """[Desktop Entry]
-Name=Zotero
-Comment=Research assistant
-Exec=/opt/zotero/zotero %U
-Icon=/opt/zotero/chrome/icons/default/default256.png
-Terminal=false
-Type=Application
-Categories=Office;Education;
-MimeType=text/plain;
-"""
-        desktop_path = "/tmp/zotero.desktop"
-        with open(desktop_path, "w", encoding="utf-8") as f:
-            f.write(desktop)
-        self._run_cmd("sudo install -m 0644 {} /usr/share/applications/zotero.desktop".format(desktop_path), 0)
-        self._run_cmd("rm -rf {} {} {}".format(archive_path, extract_dir, desktop_path), 0)
+        if not self.repair_zotero_launcher():
+            PrintUtils.print_warn("Zotero 桌面入口修复失败，请手动检查 /usr/share/applications/zotero.desktop")
+        self._run_cmd("rm -rf {} {}".format(archive_path, extract_dir), 0)
 
         verify = self._run_cmd("zotero --version", 10, "验证 Zotero 版本...")
         if self._code(verify) != 0:
             PrintUtils.print_warn("Zotero 命令验证未通过，但桌面入口已写入。")
         PrintUtils.print_success("Zotero 安装完成。")
+        return True
+
+    def _zotero_icon_candidates(self):
+        return [
+            "/opt/zotero/icons/icon256.png",
+            "/opt/zotero/icons/icon128.png",
+            "/opt/zotero/chrome/icons/default/default256.png",
+            "/opt/zotero/chrome/icons/default/default128.png",
+        ]
+
+    def repair_zotero_launcher(self):
+        if not self._check_sudo():
+            return False
+        if not os.path.exists("/opt/zotero/zotero"):
+            PrintUtils.print_error("未找到 /opt/zotero/zotero，请先安装 Zotero。")
+            return False
+
+        icon_path = None
+        for candidate in self._zotero_icon_candidates():
+            if os.path.exists(candidate):
+                icon_path = candidate
+                break
+        if icon_path is None:
+            PrintUtils.print_warn("未找到 Zotero 彩色图标文件，将保留 desktop 入口但图标可能由系统主题决定。")
+        else:
+            self._run_cmd("sudo mkdir -p /usr/share/icons/hicolor/128x128/apps", 0)
+            self._run_cmd(
+                "sudo install -m 0644 {} /usr/share/icons/hicolor/128x128/apps/zotero.png".format(
+                    shlex.quote(icon_path)
+                ),
+                0,
+            )
+
+        desktop = """[Desktop Entry]
+Name=Zotero
+Exec=/opt/zotero/zotero --url %u
+Icon=zotero
+Type=Application
+Terminal=false
+Categories=Office;Education;
+MimeType=x-scheme-handler/zotero;application/x-endnote-refer;application/x-research-info-systems;text/ris;text/x-research-info-systems;application/x-inst-for-Scientific-info;application/mods+xml;application/rdf+xml;application/x-bibtex;text/x-bibtex;application/marc;application/vnd.citationstyles.style+xml;
+X-GNOME-SingleWindow=true
+Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
+"""
+        desktop_path = "/tmp/zotero.desktop"
+        with open(desktop_path, "w", encoding="utf-8") as f:
+            f.write(desktop)
+        result = self._run_cmd(
+            "sudo install -m 0644 {} /usr/share/applications/zotero.desktop".format(
+                shlex.quote(desktop_path)
+            ),
+            0,
+        )
+        self._run_cmd("rm -f {}".format(shlex.quote(desktop_path)), 0)
+        self._run_cmd("sudo gtk-update-icon-cache -f /usr/share/icons/hicolor || true", 0)
+        self._run_cmd("update-desktop-database ~/.local/share/applications /usr/share/applications || true", 0)
+        if self._code(result) != 0:
+            PrintUtils.print_error("Zotero 桌面入口写入失败。")
+            return False
+        PrintUtils.print_success("Zotero 图标和桌面入口已修复。")
         return True
 
     def _latest_obsidian_deb_url(self):
@@ -437,6 +485,7 @@ MimeType=text/plain;
             3: "安装 Obsidian",
             4: "安装 WPS Office",
             5: "安装中文字体和 Windows 常用字体",
+            6: "修复 Zotero 图标和桌面入口",
         }
         code, _ = ChooseTask(choices, "请选择要安装的办公软件:", False).run()
         if code == 1:
@@ -453,5 +502,7 @@ MimeType=text/plain;
             return self.install_wps()
         if code == 5:
             return self.install_fonts()
+        if code == 6:
+            return self.repair_zotero_launcher()
         PrintUtils.print_warn("已取消办公软件安装")
         return False
