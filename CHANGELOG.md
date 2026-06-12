@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+### 修复搜狗输入法 fcitx 启动崩溃
+
+- 不再通过 `CmdTask` 直接运行 `fcitx -r -d`，避免 fcitx daemon 持有输出管道导致安装器 `ret_code` 缺失崩溃。
+- 改为使用非阻塞后台进程尝试重启 fcitx，失败时只提示警告，不阻断安装流程。
+- 启动前确保 `~/.config/sogoupinyin` 存在并归属目标用户，减少 `logf.conf fail` 这类配置目录问题。
+
 ### 补强搜狗输入法 fcitx 会话配置
 
 - 搜狗输入法安装器增加 `fcitx-tools`、`fcitx-ui-classic`、`fcitx-module-dbus`、`fcitx-module-kimpanel` 依赖。

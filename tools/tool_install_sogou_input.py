@@ -5,6 +5,7 @@ import pwd
 import re
 import shlex
 import socket
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -263,8 +264,33 @@ X-GNOME-Autostart-enabled=true
             PrintUtils.print_warn("写入 {} 失败: {}".format(autostart_path, exc))
 
         CmdTask("sudo -u {} im-config -n fcitx".format(shlex.quote(user)) if user != "root" else "im-config -n fcitx", 0).run()
-        CmdTask("sudo -u {} fcitx -r -d".format(shlex.quote(user)) if user != "root" else "fcitx -r -d", 0).run()
+        self._start_fcitx_nonblocking(user, home)
         PrintUtils.print_success("已配置当前用户使用 fcitx，并写入 .xinputrc 与桌面自启动。请注销并重新登录后启用搜狗输入法。")
+        return True
+
+    def _start_fcitx_nonblocking(self, user, home):
+        sogou_config_dir = os.path.join(home, ".config", "sogoupinyin")
+        try:
+            os.makedirs(sogou_config_dir, exist_ok=True)
+            if user != "root":
+                CmdTask("sudo chown -R {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(sogou_config_dir)), 0).run()
+        except Exception as exc:
+            PrintUtils.print_warn("准备搜狗输入法配置目录失败: {}".format(exc))
+
+        command = ["fcitx", "-r", "-d"]
+        if user != "root":
+            command = ["sudo", "-u", user, "env", "HOME={}".format(home)] + command
+        try:
+            subprocess.Popen(
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            PrintUtils.print_success("已尝试后台重启 fcitx。")
+        except Exception as exc:
+            PrintUtils.print_warn("后台重启 fcitx 失败，可注销重登后生效: {}".format(exc))
         return True
 
     def run(self):
