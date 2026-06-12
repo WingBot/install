@@ -4,6 +4,12 @@
 
 ## 2026-06-12
 
+### 新增 Google Chrome 安装器
+
+- 新增菜单项 `[26]`：安装 Google Chrome 最新版。
+- 从 Google 官方 Linux 直链下载 `google-chrome-stable_current_amd64.deb`，并通过 apt 安装。
+- 安装器支持下载进度显示和本地代理检测；当前仅支持 `amd64` 架构。
+
 ### 恢复 FishROS 原有工具菜单
 
 - 恢复 office 迁移前 FishROS 原有 `[1]`-`[18]` 工具入口，包括 ROS、rosdep、ROS 环境、系统源、Docker、Cartographer、ROS Docker、NodeJs、OpenCode 等。

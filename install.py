@@ -178,6 +178,12 @@ tools = {
         "tool": "tools/tool_install_ohmyzsh.py",
         "dep": [19],
     },
+    26: {
+        "tip": "一键安装:Google Chrome最新版",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_chrome.py",
+        "dep": [19],
+    },
 }
 
 

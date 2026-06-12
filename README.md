@@ -6,7 +6,7 @@
 
 - `[1]`-`[18]`：FishROS 原有 ROS、Docker、系统源、开发工具、AI 工具等入口。
 - `[19]`：基础工具包，用于测试安装器链路。
-- `[20]` 以后：自有办公与网络工具。
+- `[20]` 以后：自有办公、网络与常用软件增强工具。
 
 基础工具包内容：
 
@@ -49,6 +49,14 @@ frpc 工具会连接 `frpc.jtcx.cn:7000`，把本机 `127.0.0.1:22` 映射到远
 Zellij 工具会从 GitHub 最新 release 下载当前架构安装包，写入默认 `~/.config/zellij/config.kdl`，启用滚轮查看历史输出、选择文本复制到系统剪贴板，并默认使用兼容字符配置，避免缺少 Nerd Font/Powerline 字体时 Tab 标签显示乱码。
 
 Oh My Zsh 工具会安装 zsh、git、Powerline 字体，克隆 Oh My Zsh 官方框架和常用插件，并写入默认 `.zshrc`。
+
+当前已新增 Chrome 菜单项：
+
+```text
+[26]: 一键安装 Google Chrome 最新版
+```
+
+Chrome 工具会从 Google 官方 Linux 直链下载当前稳定版 `google-chrome-stable_current_amd64.deb` 并通过 apt 安装。当前仅支持 `amd64` 架构。
 
 下载行为：入口脚本、运行时文件、菜单工具脚本和当前菜单中的软件安装包都会在终端显示下载地址、进度条和实时速度，便于判断网络是否正常。
 
