@@ -2,6 +2,12 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-12 16:09:00 +0800 - Improve Windows font import
+
+- Windows 字体导入不再只检查固定路径，新增 `/mnt/*/Windows/Fonts`、`/media/<user>/*/Windows/Fonts`、`/run/media/<user>/*/Windows/Fonts` 自动扫描。
+- 支持通过 `WINDOWS_FONTS_DIR=/路径/Windows/Fonts` 手动指定字体来源目录。
+- 未找到 Windows 字体目录时输出可操作提示，方便挂载 Windows 系统盘后重试。
+
 ## 2026-06-12 14:15:51 +0800 - Fix Zotero launcher icon
 
 - Zotero 安装后不再手写指向 `chrome/icons/default/default256.png` 的图标路径。

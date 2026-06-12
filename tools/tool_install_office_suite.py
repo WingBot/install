@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import glob
 import hashlib
 import json
 import os
@@ -441,23 +442,53 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
         PrintUtils.print_success("中文字体和 Windows 常用字体安装流程完成。")
         return True
 
-    def _copy_windows_fonts(self):
-        candidates = ["/mnt/c/Windows/Fonts"]
+    def _windows_font_candidates(self):
         user = self._target_user()
+        candidates = []
+        env_dir = os.environ.get("WINDOWS_FONTS_DIR")
+        if env_dir:
+            candidates.extend([item for item in env_dir.split(":") if item.strip()])
         candidates.extend([
-            "/media/{}/Windows/Fonts".format(user),
-            "/run/media/{}/Windows/Fonts".format(user),
+            "/mnt/c/Windows/Fonts",
+            os.path.join(self._target_home(), "Windows", "Fonts"),
         ])
+        patterns = [
+            "/mnt/*/Windows/Fonts",
+            "/media/{}/Windows/Fonts".format(user),
+            "/media/{}/*/Windows/Fonts".format(user),
+            "/run/media/{}/Windows/Fonts".format(user),
+            "/run/media/{}/*/Windows/Fonts".format(user),
+        ]
+        for pattern in patterns:
+            candidates.extend(glob.glob(pattern))
+
+        unique = []
+        seen = set()
+        for path in candidates:
+            normalized = os.path.abspath(os.path.expanduser(path.strip()))
+            if normalized not in seen:
+                seen.add(normalized)
+                unique.append(normalized)
+        return unique
+
+    def _copy_windows_fonts(self):
+        candidates = self._windows_font_candidates()
         home = self._target_home()
         target_dir = os.path.join(home, ".local", "share", "fonts", "windows")
         copied = 0
+        used_source = None
         for source_dir in candidates:
             if not os.path.isdir(source_dir):
                 continue
+            font_files = [
+                name for name in os.listdir(source_dir)
+                if name.lower().endswith((".ttf", ".ttc", ".otf"))
+            ]
+            if len(font_files) == 0:
+                continue
+            used_source = source_dir
             os.makedirs(target_dir, exist_ok=True)
-            for name in os.listdir(source_dir):
-                if not name.lower().endswith((".ttf", ".ttc", ".otf")):
-                    continue
+            for name in font_files:
                 src = os.path.join(source_dir, name)
                 dst = os.path.join(target_dir, name)
                 try:
@@ -466,6 +497,7 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
                         copied += 1
                 except OSError:
                     pass
+            user = self._target_user()
             if user != "root":
                 self._run_cmd(
                     "sudo chown -R {}:{} {}".format(
@@ -474,8 +506,13 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
                     0,
                 )
             break
-        if copied == 0:
-            PrintUtils.print_info("未发现可直接导入的 Windows 字体目录，已跳过本机 Windows 字体复制。")
+        if used_source:
+            PrintUtils.print_info("Windows 字体来源目录: {}".format(used_source))
+            if copied == 0:
+                PrintUtils.print_info("Windows 字体目录已存在，但没有发现需要新增复制的字体文件。")
+        else:
+            PrintUtils.print_warn("未发现可直接导入的 Windows 字体目录，已跳过本机 Windows 字体复制。")
+            PrintUtils.print_info("请先在文件管理器中挂载 Windows 系统盘，或运行时指定: WINDOWS_FONTS_DIR=/路径/Windows/Fonts")
         return copied
 
     def run(self):

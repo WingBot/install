@@ -72,7 +72,7 @@ AI 编程助手工具会通过官方 npm 包安装 OpenAI Codex CLI、Claude Cod
 [28]: 一键安装 办公套件(Zotero/Obsidian/WPS/字体)
 ```
 
-办公套件工具支持安装 Zotero、Obsidian、WPS Office，以及中文字体和 Windows 常用字体。Zotero 使用官方 Linux tarball 安装到 `/opt/zotero`；Obsidian 从 GitHub 最新 release 选择当前架构 deb；WPS 从 WPS Linux 官方页面解析当前 amd64 deb。字体安装包括 Noto CJK、文泉驿、AR PL 中文字体，尝试安装 `ttf-mscorefonts-installer`，并在发现 `/mnt/c/Windows/Fonts`、`/media/<user>/Windows/Fonts` 或 `/run/media/<user>/Windows/Fonts` 时导入本机 Windows 字体到当前用户字体目录。
+办公套件工具支持安装 Zotero、Obsidian、WPS Office，以及中文字体和 Windows 常用字体。Zotero 使用官方 Linux tarball 安装到 `/opt/zotero`；Obsidian 从 GitHub 最新 release 选择当前架构 deb；WPS 从 WPS Linux 官方页面解析当前 amd64 deb。字体安装包括 Noto CJK、文泉驿、AR PL 中文字体，尝试安装 `ttf-mscorefonts-installer`，并在发现 `/mnt/c/Windows/Fonts`、`/mnt/*/Windows/Fonts`、`/media/<user>/*/Windows/Fonts`、`/run/media/<user>/*/Windows/Fonts` 或 `WINDOWS_FONTS_DIR` 指定目录时导入本机 Windows 字体到当前用户字体目录。
 
 ## 版本策略
 
