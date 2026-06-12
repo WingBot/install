@@ -37,22 +37,23 @@ newgrp docker
         # sudo apt remove wechat-linux-spark
 
         """
-        wechat_version_dic = {1:"Docker版本",2:"桌面版本(v2.1.1)",3:"墙裂推荐:官方Linux版本",4:"一键清理"}
+        wechat_version_dic = {1:"官方Linux最新版(推荐)",2:"Docker版本",3:"桌面版本(v2.1.1兼容旧版)",4:"一键清理"}
         code,_ = ChooseTask(wechat_version_dic,"请选择微信版本(两个版本区别对比:https://fishros.org.cn/forum/topic/195):",False).run()
-        if code==2:
-            AptUtils.install_pkg("git")
-            CmdTask('sudo apt install git',os_command=True).run()
-            CmdTask('git clone https://gitee.com/ohhuo/wechat_deb.git /tmp/wechat_deb',os_command=True).run()
-            CmdTask('cd /tmp/wechat_deb && cat wechat_* > wechat.deb',os_command=True).run()
-            CmdTask('cd /tmp/wechat_deb && sudo dpkg -i wechat.deb',os_command=True).run()
-            CmdTask('rm -rf /tmp/wechat_deb',os_command=True).run()
-            PrintUtils.print_success("已为你安装完成wechat~")
-        if code==3:
+        if code==1:
+            if osarch != 'amd64':
+                PrintUtils.print_error("微信官方 Linux deb 当前仅支持 amd64。当前架构: {}".format(osarch))
+                return False
             CmdTask('wget --show-progress --progress=bar:force:noscroll https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb -O /tmp/wechat.deb',os_command=True).run()
-            CmdTask('sudo dpkg -i /tmp/wechat.deb',os_command=True).run()
-            CmdTask('apt --fix-broken install -y',os_command=True).run()
-            PrintUtils.print_success("已为你安装完成wechat-linux版本~")
-        if code == 1:
+            result = CmdTask('sudo apt install -y /tmp/wechat.deb').run()
+            if result[0] != 0:
+                CmdTask('sudo apt --fix-broken install -y').run()
+                result = CmdTask('sudo apt install -y /tmp/wechat.deb').run()
+                if result[0] != 0:
+                    PrintUtils.print_error("微信官方 Linux 版安装失败。")
+                    return False
+            CmdTask('rm -f /tmp/wechat.deb',os_command=True).run()
+            PrintUtils.print_success("已为你安装完成微信官方 Linux 最新版~")
+        if code == 2:
             run_tool_file('tools.tool_install_docker')
             user =  FileUtils.getusers()[0]
             name = 'wechat'
@@ -88,6 +89,15 @@ newgrp docker
             PrintUtils.print_warn("微信所有文件放到你的主目录下：WeChatFiles")
             PrintUtils.print_info("=================分辨率/目录等配置==============")
             PrintUtils.print_warn("在任意终端输入wechat，选w-回车进入配置页面")
+        if code==3:
+            AptUtils.install_pkg("git")
+            CmdTask('sudo apt install git',os_command=True).run()
+            CmdTask('rm -rf /tmp/wechat_deb',os_command=True).run()
+            CmdTask('git clone https://gitee.com/ohhuo/wechat_deb.git /tmp/wechat_deb',os_command=True).run()
+            CmdTask('cd /tmp/wechat_deb && cat wechat_* > wechat.deb',os_command=True).run()
+            CmdTask('cd /tmp/wechat_deb && sudo dpkg -i wechat.deb',os_command=True).run()
+            CmdTask('rm -rf /tmp/wechat_deb',os_command=True).run()
+            PrintUtils.print_success("已为你安装完成旧版 wechat~")
         if code==4:
             try:
                 CmdTask("sudo apt remove wechat-linux-spark -y",os_command=True).run()

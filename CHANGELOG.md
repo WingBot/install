@@ -4,6 +4,13 @@
 
 ## 2026-06-12
 
+### 调整常用软件为稳定最新版
+
+- VS Code 改为使用 Microsoft stable 最新下载端点，不再固定 1.86.2 安装包。
+- Node.js 默认版本改为动态检测当前最新 LTS 主版本，保留 22/20 作为兼容选项。
+- 微信安装选项调整为默认推荐官方 Linux 最新版，Docker 版和旧桌面版作为备选。
+- README 增加版本策略说明；Docker 已使用 Docker CE stable apt 仓库安装最新版，无需额外调整。
+
 ### 新增 Google Chrome 安装器
 
 - 新增菜单项 `[26]`：安装 Google Chrome 最新版。

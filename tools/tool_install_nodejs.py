@@ -2,6 +2,7 @@
 import os
 import json
 import re
+import socket
 import urllib.request
 
 from .base import BaseTool
@@ -33,6 +34,33 @@ class Tool(BaseTool):
             return result[1]
         return []
 
+    def _local_proxy_available(self, host, port):
+        try:
+            with socket.create_connection((host, port), timeout=0.3):
+                return True
+        except OSError:
+            return False
+
+    def _urlopen(self, url, timeout=20):
+        proxies = {}
+        http_proxy = os.environ.get("http_proxy") or os.environ.get("HTTP_PROXY")
+        https_proxy = os.environ.get("https_proxy") or os.environ.get("HTTPS_PROXY")
+        all_proxy = os.environ.get("all_proxy") or os.environ.get("ALL_PROXY")
+        if http_proxy:
+            proxies["http"] = http_proxy
+        if https_proxy:
+            proxies["https"] = https_proxy
+        if all_proxy:
+            proxies.setdefault("http", all_proxy)
+            proxies.setdefault("https", all_proxy)
+        if not proxies and self._local_proxy_available("127.0.0.1", 7897):
+            proxy_url = "http://127.0.0.1:7897"
+            proxies = {"http": proxy_url, "https": proxy_url}
+            PrintUtils.print_info("检测到本地代理，Node.js 版本信息将使用: {}".format(proxy_url))
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies)) if proxies else urllib.request.build_opener()
+        request = urllib.request.Request(url, headers={"User-Agent": "office-install/1.0"})
+        return opener.open(request, timeout=timeout)
+
     def _detect_node_major(self):
         result = self._run_cmd("node -v", 10)
         if self._code(result) != 0:
@@ -55,29 +83,59 @@ class Tool(BaseTool):
                 bashrc, "# >>> nodejs initialize >>>", "# <<< nodejs initialize <<<", ""
             )
 
+    def _latest_lts_major(self):
+        urls = [
+            "https://nodejs.org/dist/index.json",
+            "https://mirrors.tuna.tsinghua.edu.cn/nodejs-release/index.json",
+        ]
+        majors = []
+        for url in urls:
+            try:
+                with self._urlopen(url, timeout=20) as resp:
+                    index_data = json.loads(resp.read().decode("utf-8", "ignore"))
+                for item in index_data:
+                    if not item.get("lts"):
+                        continue
+                    ver = str(item.get("version", "")).lstrip("v")
+                    parts = ver.split(".")
+                    if len(parts) >= 3 and parts[0].isdigit():
+                        majors.append(int(parts[0]))
+            except Exception:
+                pass
+        if majors:
+            detected_major = max(majors)
+            if detected_major < 24:
+                PrintUtils.print_warn(
+                    "检测到的 Node.js LTS 主版本可能来自滞后索引，当前回退使用 24.x"
+                )
+                return 24
+            return detected_major
+        return 24
+
     def _choose_target_major(self):
+        latest_lts = self._latest_lts_major()
         version_dic = {
-            1: "Node.js 22 LTS(默认推荐)",
-            2: "Node.js 20 LTS",
-            3: "Node.js 18 LTS(兼容)",
+            1: "Node.js 最新 LTS(默认推荐，当前检测为 {}.x)".format(latest_lts),
+            2: "Node.js 22 LTS(兼容)",
+            3: "Node.js 20 LTS(兼容)",
             4: "自定义主版本号",
         }
         code, _ = ChooseTask(version_dic, "请选择Node.js默认版本:", False).run()
         if code == 1:
-            return 22
+            return latest_lts
         if code == 2:
-            return 20
+            return 22
         if code == 3:
-            return 18
+            return 20
         if code == 4:
-            custom = input("请输入Node.js主版本号(如22):").strip()
+            custom = input("请输入Node.js主版本号(如{}):".format(latest_lts)).strip()
             if custom.isdigit() and int(custom) > 0:
                 return int(custom)
-            PrintUtils.print_warn("输入无效，默认使用22")
-            return 22
+            PrintUtils.print_warn("输入无效，默认使用最新 LTS {}".format(latest_lts))
+            return latest_lts
         if os.environ.get("FISH_INSTALL_CONFIG") is not None:
-            PrintUtils.print_warn("自动化模式未提供Node.js版本，默认使用22")
-            return 22
+            PrintUtils.print_warn("自动化模式未提供Node.js版本，默认使用最新 LTS {}".format(latest_lts))
+            return latest_lts
         PrintUtils.print_warn("已取消Node.js安装")
         return None
 
@@ -303,7 +361,7 @@ class Tool(BaseTool):
 
     def _get_latest_tarball_name(self, shasum_url, arch_name):
         try:
-            with urllib.request.urlopen(shasum_url, timeout=20) as resp:
+            with self._urlopen(shasum_url, timeout=20) as resp:
                 data = resp.read().decode("utf-8", "ignore")
         except Exception:
             return None
@@ -424,7 +482,9 @@ class Tool(BaseTool):
         self._run_cmd("rm -rf /tmp/nodejs.tar.xz", 10)
         return True
 
-    def install_nodejs_version(self, target_major=22, with_registry=True):
+    def install_nodejs_version(self, target_major=None, with_registry=True):
+        if target_major is None:
+            target_major = self._latest_lts_major()
         self._cleanup_legacy()
         current_major = self._detect_node_major()
         if current_major is not None and current_major >= target_major:

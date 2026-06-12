@@ -58,6 +58,16 @@ Oh My Zsh 工具会安装 zsh、git、Powerline 字体，克隆 Oh My Zsh 官方
 
 Chrome 工具会从 Google 官方 Linux 直链下载当前稳定版 `google-chrome-stable_current_amd64.deb` 并通过 apt 安装。当前仅支持 `amd64` 架构。
 
+## 版本策略
+
+FishROS 原工具中部分软件曾固定到特定下载包，主要是为了当时的可复现性、下载源稳定性和兼容旧系统。当前 `office` 分支对常用桌面/开发软件优先采用稳定版最新发布：
+
+- VS Code：使用 Microsoft stable 最新下载端点。
+- Node.js：默认动态选择当前最新 LTS 主版本，保留 22/20 等兼容选项。
+- Docker：使用 Docker CE stable apt 仓库，安装仓库中的最新版。
+- 微信：默认选择官方 Linux 最新版，Docker 版和旧桌面版作为兼容备选。
+- Chrome：使用 Google Chrome stable 官方最新版 deb。
+
 下载行为：入口脚本、运行时文件、菜单工具脚本和当前菜单中的软件安装包都会在终端显示下载地址、进度条和实时速度，便于判断网络是否正常。
 
 ## 工作方式
