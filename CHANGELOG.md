@@ -2,6 +2,12 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-12 14:06:54 +0800 - Fix Zotero and WPS downloads
+
+- Zotero 安装包解压改为 `tarfile` 自动识别格式，兼容官方下载实际返回的 tar 包压缩格式，避免固定 `bz2` 导致 `not a bzip2 file`。
+- WPS 下载按官网 `downLoad()` JavaScript 逻辑为 URL 追加 `t` 和 `k` 签名参数，修复裸 CDN 链接 `403 Forbidden`。
+- WPS 下载增加浏览器 User-Agent、Referer，并保留代理失败后的直连重试。
+
 ## 2026-06-12 12:15:00 +0800 - Add office suite installers
 
 - 新增菜单项 `[28]`：办公套件安装器，支持 Zotero、Obsidian、WPS Office、中文字体和 Windows 常用字体。

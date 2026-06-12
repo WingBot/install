@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import hashlib
 import json
 import os
 import re
@@ -9,6 +10,7 @@ import sys
 import tarfile
 import time
 import urllib.request
+from urllib.parse import urlparse
 
 from .base import BaseTool, CmdTask, PrintUtils, ChooseTask, osarch
 
@@ -53,7 +55,10 @@ class Tool(BaseTool):
         except OSError:
             return False
 
-    def _proxy_opener(self):
+    def _proxy_opener(self, use_proxy=True):
+        if not use_proxy:
+            return urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
         proxies = {}
         http_proxy = os.environ.get("http_proxy") or os.environ.get("HTTP_PROXY")
         https_proxy = os.environ.get("https_proxy") or os.environ.get("HTTPS_PROXY")
@@ -75,23 +80,29 @@ class Tool(BaseTool):
             return urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
         return urllib.request.build_opener()
 
-    def _urlopen(self, url, timeout=60):
+    def _urlopen(self, url, timeout=60, headers=None, use_proxy=True):
+        request_headers = {"User-Agent": "office-install/1.0"}
+        if headers:
+            request_headers.update(headers)
         request = urllib.request.Request(
-            url, headers={"User-Agent": "office-install/1.0"}
+            url, headers=request_headers
         )
-        return self._proxy_opener().open(request, timeout=timeout)
+        return self._proxy_opener(use_proxy=use_proxy).open(request, timeout=timeout)
 
-    def _download_file(self, url, target_path, timeout=180):
+    def _download_file(self, url, target_path, timeout=180, headers=None, use_proxy=True):
         PrintUtils.print_info("下载地址: {}".format(url))
+        request_headers = {"User-Agent": "office-install/1.0"}
+        if headers:
+            request_headers.update(headers)
         request = urllib.request.Request(
-            url, headers={"User-Agent": "office-install/1.0"}
+            url, headers=request_headers
         )
         temp_path = target_path + ".part"
         downloaded = 0
         last_print = 0
         start = time.time()
         try:
-            with self._proxy_opener().open(request, timeout=timeout) as response:
+            with self._proxy_opener(use_proxy=use_proxy).open(request, timeout=timeout) as response:
                 total = int(response.headers.get("Content-Length") or 0)
                 with open(temp_path, "wb") as f:
                     while True:
@@ -186,7 +197,7 @@ class Tool(BaseTool):
         if url is None:
             return False
 
-        archive_path = "/tmp/zotero.tar.bz2"
+        archive_path = "/tmp/zotero.tar"
         extract_dir = "/tmp/zotero_extract"
         self._run_cmd("rm -rf {} {}".format(archive_path, extract_dir), 0)
         if not self._download_file(url, archive_path, 240):
@@ -194,7 +205,7 @@ class Tool(BaseTool):
         os.makedirs(extract_dir, exist_ok=True)
 
         try:
-            with tarfile.open(archive_path, "r:bz2") as tar:
+            with tarfile.open(archive_path, "r:*") as tar:
                 self._safe_extract(tar, extract_dir)
         except Exception as exc:
             PrintUtils.print_error("Zotero 解压失败: {}".format(exc))
@@ -310,6 +321,17 @@ MimeType=text/plain;
         PrintUtils.print_error("未能解析 WPS deb 下载地址。")
         return None
 
+
+    def _sign_wps_url(self, url):
+        parsed = urlparse(url)
+        timestamp = int(time.time())
+        secret_key = "7f8faaaa468174dc1c9cd62e5f218a5b"
+        digest = hashlib.md5(
+            "{}{}{}".format(secret_key, parsed.path, timestamp).encode("utf-8")
+        ).hexdigest()
+        separator = "&" if "?" in url else "?"
+        return "{}{}t={}&k={}".format(url, separator, timestamp, digest)
+
     def install_wps(self):
         if not self._check_sudo():
             return False
@@ -318,8 +340,15 @@ MimeType=text/plain;
             return False
         deb_path = "/tmp/wps-office.deb"
         self._run_cmd("rm -f {}".format(deb_path), 0)
-        if not self._download_file(url, deb_path, 360):
-            return False
+        url = self._sign_wps_url(url)
+        wps_headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+            "Referer": WPS_LINUX_PAGE,
+        }
+        if not self._download_file(url, deb_path, 360, headers=wps_headers):
+            PrintUtils.print_warn("WPS 通过当前代理下载失败，尝试不使用代理直接下载。")
+            if not self._download_file(url, deb_path, 360, headers=wps_headers, use_proxy=False):
+                return False
         ok = self._install_deb(deb_path, "WPS Office")
         self._run_cmd("rm -f {}".format(deb_path), 0)
         if ok:
