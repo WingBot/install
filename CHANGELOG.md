@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+### 补齐搜狗 logf 配置并简化 fcitx profile
+
+- 搜狗输入法安装后自动补齐 `~/.config/sogoupinyin/logf.conf`，避免启动时反复提示 `parse logf.conf fail`。
+- `EnabledIMList` 改为只保留 `sogoupinyin` 和 `fcitx-keyboard-us`，避免 fcitx profile 被写入大量键盘布局导致重复项和排查困难。
+
+### 修复搜狗输入法缺少 libgsettings-qt
+
+- 搜狗输入法依赖增加 `libgsettings-qt1`，修复 `/opt/sogoupinyin/files/bin/sogoupinyin-service` 启动时报 `libgsettings-qt.so.1` 缺失。
+- 同步增加 `qml-module-gsettings1.0`，补齐 GSettings 的 Qt/QML 运行依赖。
+
 ### 自动切换搜狗为当前 fcitx 输入法
 
 - 搜狗输入法安装后自动把 `~/.config/fcitx/profile` 中的 `IMName` 设置为 `sogoupinyin`。

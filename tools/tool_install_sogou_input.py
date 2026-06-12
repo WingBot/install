@@ -180,6 +180,8 @@ class Tool(BaseTool):
             "libqt5qml5",
             "libqt5quick5",
             "libqt5quickwidgets5",
+            "libgsettings-qt1",
+            "qml-module-gsettings1.0",
             "qml-module-qtquick2",
         ]
         CmdTask("sudo apt update", 0).run()
@@ -292,8 +294,7 @@ X-GNOME-Autostart-enabled=true
                 elif line.startswith("EnabledIMList="):
                     value = line.split("=", 1)[1]
                     items = [item for item in value.split(",") if item]
-                    filtered = [item for item in items if not item.startswith("sogoupinyin:") and not item.startswith("fcitx-keyboard-us:")]
-                    lines[index] = "EnabledIMList=sogoupinyin:True,fcitx-keyboard-us:False" + ("," + ",".join(filtered) if filtered else "")
+                    lines[index] = "EnabledIMList=sogoupinyin:True,fcitx-keyboard-us:False"
                     has_enabled_list = True
             if not has_im_name:
                 lines.append("IMName=sogoupinyin")
@@ -326,6 +327,16 @@ X-GNOME-Autostart-enabled=true
         sogou_config_dir = os.path.join(home, ".config", "sogoupinyin")
         try:
             os.makedirs(sogou_config_dir, exist_ok=True)
+            logf_path = os.path.join(sogou_config_dir, "logf.conf")
+            if not os.path.exists(logf_path):
+                source_log_conf = "/opt/sogoupinyin/files/share/conf/log/log.conf"
+                if os.path.exists(source_log_conf):
+                    with open(source_log_conf, "r", encoding="utf-8", errors="ignore") as src:
+                        logf_data = src.read()
+                else:
+                    logf_data = "log4cplus.logger.sogou=ERROR\n"
+                with open(logf_path, "w", encoding="utf-8") as dst:
+                    dst.write(logf_data)
             if user != "root":
                 CmdTask("sudo chown -R {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(sogou_config_dir)), 0).run()
         except Exception as exc:
