@@ -2,6 +2,13 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-12 12:15:00 +0800 - Add office suite installers
+
+- 新增菜单项 `[28]`：办公套件安装器，支持 Zotero、Obsidian、WPS Office、中文字体和 Windows 常用字体。
+- Zotero 使用官方 Linux tarball 安装到 `/opt/zotero`，并写入命令和桌面入口。
+- Obsidian 从 GitHub 最新 release 自动选择当前架构 deb；WPS 从 WPS Linux 官方页面解析 amd64 deb。
+- 字体安装覆盖 Noto CJK、文泉驿、AR PL 中文字体、Microsoft core fonts，并尝试导入本机 Windows Fonts 目录。
+
 ## 2026-06-12 11:45:00 +0800 - Add AI coding assistant installers
 
 - 新增菜单项 `[27]`：安装/卸载 AI 编程助手，支持 OpenAI Codex CLI、Claude Code 和 GitHub Copilot CLI。

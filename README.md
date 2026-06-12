@@ -66,6 +66,14 @@ Chrome 工具会从 Google 官方 Linux 直链下载当前稳定版 `google-chro
 
 AI 编程助手工具会通过官方 npm 包安装 OpenAI Codex CLI、Claude Code 和 GitHub Copilot CLI，支持单独安装、全部安装和卸载。安装前会检查 Node.js 版本，Copilot CLI 需要 Node.js 22+，Codex/Claude Code 需要 Node.js 18+；不满足时会调用 Node.js 安装器升级到当前最新 LTS。安装完成后需要按各工具提示登录对应账号：`codex`、`claude`、`copilot`。
 
+当前已新增办公套件菜单项：
+
+```text
+[28]: 一键安装 办公套件(Zotero/Obsidian/WPS/字体)
+```
+
+办公套件工具支持安装 Zotero、Obsidian、WPS Office，以及中文字体和 Windows 常用字体。Zotero 使用官方 Linux tarball 安装到 `/opt/zotero`；Obsidian 从 GitHub 最新 release 选择当前架构 deb；WPS 从 WPS Linux 官方页面解析当前 amd64 deb。字体安装包括 Noto CJK、文泉驿、AR PL 中文字体，尝试安装 `ttf-mscorefonts-installer`，并在发现 `/mnt/c/Windows/Fonts`、`/media/<user>/Windows/Fonts` 或 `/run/media/<user>/Windows/Fonts` 时导入本机 Windows 字体到当前用户字体目录。
+
 ## 版本策略
 
 FishROS 原工具中部分软件曾固定到特定下载包，主要是为了当时的可复现性、下载源稳定性和兼容旧系统。当前 `office` 分支对常用桌面/开发软件优先采用稳定版最新发布：

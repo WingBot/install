@@ -190,6 +190,12 @@ tools = {
         "tool": "tools/tool_install_ai_code_agents.py",
         "dep": [6],
     },
+    28: {
+        "tip": "一键安装:办公套件(Zotero/Obsidian/WPS/字体)",
+        "type": INSTALL_OFFICE,
+        "tool": "tools/tool_install_office_suite.py",
+        "dep": [19],
+    },
 }
 
 
