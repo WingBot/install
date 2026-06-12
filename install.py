@@ -184,6 +184,12 @@ tools = {
         "tool": "tools/tool_install_chrome.py",
         "dep": [19],
     },
+    27: {
+        "tip": "一键安装/卸载:AI编程助手(Codex/Claude Code/Copilot)",
+        "type": INSTALL_AI,
+        "tool": "tools/tool_install_ai_code_agents.py",
+        "dep": [6],
+    },
 }
 
 

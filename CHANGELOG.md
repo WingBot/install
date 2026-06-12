@@ -2,6 +2,13 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-12 11:45:00 +0800 - Add AI coding assistant installers
+
+- 新增菜单项 `[27]`：安装/卸载 AI 编程助手，支持 OpenAI Codex CLI、Claude Code 和 GitHub Copilot CLI。
+- Codex 使用官方 npm 包 `@openai/codex`，Claude Code 使用 `@anthropic-ai/claude-code`，Copilot CLI 使用新的 `@github/copilot`。
+- 安装器会检查 Node.js 版本，必要时自动调用 Node.js 安装器升级到当前最新 LTS；Copilot CLI 要求 Node.js 22+。
+- README 增加账号登录和启动命令说明。
+
 ## 2026-06-12 11:23:38 +0800 - Avoid sudo when saving exit config
 
 - 修复选择 `[0]` 退出安装器后，仍保存 `/tmp/office_install.yaml` 并可能触发 `sudo` 密码输入的问题。

@@ -58,6 +58,14 @@ Oh My Zsh 工具会安装 zsh、git、Powerline 字体，克隆 Oh My Zsh 官方
 
 Chrome 工具会从 Google 官方 Linux 直链下载当前稳定版 `google-chrome-stable_current_amd64.deb` 并通过 apt 安装。当前仅支持 `amd64` 架构。
 
+当前已新增 AI 编程助手菜单项：
+
+```text
+[27]: 一键安装/卸载 AI 编程助手(Codex/Claude Code/Copilot)
+```
+
+AI 编程助手工具会通过官方 npm 包安装 OpenAI Codex CLI、Claude Code 和 GitHub Copilot CLI，支持单独安装、全部安装和卸载。安装前会检查 Node.js 版本，Copilot CLI 需要 Node.js 22+，Codex/Claude Code 需要 Node.js 18+；不满足时会调用 Node.js 安装器升级到当前最新 LTS。安装完成后需要按各工具提示登录对应账号：`codex`、`claude`、`copilot`。
+
 ## 版本策略
 
 FishROS 原工具中部分软件曾固定到特定下载包，主要是为了当时的可复现性、下载源稳定性和兼容旧系统。当前 `office` 分支对常用桌面/开发软件优先采用稳定版最新发布：
