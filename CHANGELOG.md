@@ -2,6 +2,12 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-12 17:27:51 +0800 - Add Office font aliases
+
+- 字体安装新增 Liberation、Carlito、Caladea 等可通过 apt 网络安装的 Office 替代字体。
+- 写入 `/etc/fonts/conf.d/64-office-font-aliases.conf`，把 Microsoft YaHei、SimSun、DengXian、Calibri、Cambria 等常见 Windows/Office 字体名映射到 Linux 可用字体。
+- 保留本机 Windows 字体导入作为精确字体方案；未挂载 Windows 字体目录时仍可使用网络安装的替代字体改善 WPS 展示。
+
 ## 2026-06-12 16:09:00 +0800 - Improve Windows font import
 
 - Windows 字体导入不再只检查固定路径，新增 `/mnt/*/Windows/Fonts`、`/media/<user>/*/Windows/Fonts`、`/run/media/<user>/*/Windows/Fonts` 自动扫描。

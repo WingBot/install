@@ -416,6 +416,10 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
             "fonts-wqy-zenhei",
             "fonts-arphic-ukai",
             "fonts-arphic-uming",
+            "fonts-liberation",
+            "fonts-liberation2",
+            "fonts-crosextra-carlito",
+            "fonts-crosextra-caladea",
         ]
         self._run_cmd("sudo apt update", 0)
         result = self._run_cmd("sudo apt install -y {}".format(" ".join(packages)), 0, "安装中文字体包...")
@@ -434,12 +438,53 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
         if self._code(ms_result) != 0:
             PrintUtils.print_warn("Microsoft core fonts 安装失败，可能是当前 apt 源未启用 multiverse/contrib。")
 
+        self._write_office_font_aliases()
         copied = self._copy_windows_fonts()
         self._run_cmd("fc-cache -f", 0, "刷新当前用户字体缓存...")
         self._run_cmd("sudo fc-cache -f", 0, "刷新系统字体缓存...")
         if copied > 0:
             PrintUtils.print_success("已导入本机 Windows 字体 {} 个文件。".format(copied))
         PrintUtils.print_success("中文字体和 Windows 常用字体安装流程完成。")
+        return True
+
+    def _write_office_font_aliases(self):
+        alias_conf = """<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <alias><family>Microsoft YaHei</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Micro Hei</family></prefer></alias>
+  <alias><family>微软雅黑</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Micro Hei</family></prefer></alias>
+  <alias><family>DengXian</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Micro Hei</family></prefer></alias>
+  <alias><family>等线</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Micro Hei</family></prefer></alias>
+  <alias><family>SimSun</family><prefer><family>Noto Serif CJK SC</family><family>AR PL UMing CN</family></prefer></alias>
+  <alias><family>宋体</family><prefer><family>Noto Serif CJK SC</family><family>AR PL UMing CN</family></prefer></alias>
+  <alias><family>NSimSun</family><prefer><family>Noto Serif CJK SC</family><family>AR PL UMing CN</family></prefer></alias>
+  <alias><family>SimHei</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Zen Hei</family></prefer></alias>
+  <alias><family>黑体</family><prefer><family>Noto Sans CJK SC</family><family>WenQuanYi Zen Hei</family></prefer></alias>
+  <alias><family>KaiTi</family><prefer><family>AR PL UKai CN</family><family>Noto Serif CJK SC</family></prefer></alias>
+  <alias><family>楷体</family><prefer><family>AR PL UKai CN</family><family>Noto Serif CJK SC</family></prefer></alias>
+  <alias><family>FangSong</family><prefer><family>AR PL UMing CN</family><family>Noto Serif CJK SC</family></prefer></alias>
+  <alias><family>仿宋</family><prefer><family>AR PL UMing CN</family><family>Noto Serif CJK SC</family></prefer></alias>
+  <alias><family>Calibri</family><prefer><family>Carlito</family><family>Liberation Sans</family></prefer></alias>
+  <alias><family>Cambria</family><prefer><family>Caladea</family><family>Liberation Serif</family></prefer></alias>
+  <alias><family>Arial</family><prefer><family>Liberation Sans</family><family>Arial</family></prefer></alias>
+  <alias><family>Times New Roman</family><prefer><family>Liberation Serif</family><family>Times New Roman</family></prefer></alias>
+  <alias><family>Courier New</family><prefer><family>Liberation Mono</family><family>Courier New</family></prefer></alias>
+</fontconfig>
+"""
+        conf_path = "/tmp/64-office-font-aliases.conf"
+        with open(conf_path, "w", encoding="utf-8") as f:
+            f.write(alias_conf)
+        result = self._run_cmd(
+            "sudo install -m 0644 {} /etc/fonts/conf.d/64-office-font-aliases.conf".format(
+                shlex.quote(conf_path)
+            ),
+            0,
+            "写入 Office/WPS 字体替换规则...",
+        )
+        self._run_cmd("rm -f {}".format(shlex.quote(conf_path)), 0)
+        if self._code(result) != 0:
+            PrintUtils.print_warn("Office/WPS 字体替换规则写入失败。")
+            return False
         return True
 
     def _windows_font_candidates(self):
