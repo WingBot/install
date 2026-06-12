@@ -2,13 +2,14 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
-## Unreleased
+## 2026-06-12
 
 ### 恢复 FishROS 原有工具菜单
 
 - 恢复 office 迁移前 FishROS 原有 `[1]`-`[18]` 工具入口，包括 ROS、rosdep、ROS 环境、系统源、Docker、Cartographer、ROS Docker、NodeJs、OpenCode 等。
 - 自有办公增强工具整体后移到 `[19]` 以后，避免破坏 FishROS 原工具之间的依赖编号。
 - README 同步更新菜单编号，基础链路测试改为选择 `[19]` 基础工具包。
+- 异机测试启动命令不变，仍通过 `wget` 下载入口脚本并设置 `INSTALL_BASE_URL` 运行；变化仅为菜单编号。
 
 ### 补齐搜狗 logf 配置并简化 fcitx profile
 
