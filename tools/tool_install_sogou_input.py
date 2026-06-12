@@ -264,8 +264,62 @@ X-GNOME-Autostart-enabled=true
             PrintUtils.print_warn("写入 {} 失败: {}".format(autostart_path, exc))
 
         CmdTask("sudo -u {} im-config -n fcitx".format(shlex.quote(user)) if user != "root" else "im-config -n fcitx", 0).run()
+        self._prefer_sogou_input_method(user, home)
         self._start_fcitx_nonblocking(user, home)
         PrintUtils.print_success("已配置当前用户使用 fcitx，并写入 .xinputrc 与桌面自启动。请注销并重新登录后启用搜狗输入法。")
+        return True
+
+    def _prefer_sogou_input_method(self, user, home):
+        fcitx_dir = os.path.join(home, ".config", "fcitx")
+        profile_path = os.path.join(fcitx_dir, "profile")
+        config_path = os.path.join(fcitx_dir, "config")
+        try:
+            os.makedirs(fcitx_dir, exist_ok=True)
+            profile = ""
+            if os.path.exists(profile_path):
+                with open(profile_path, "r", encoding="utf-8", errors="ignore") as f:
+                    profile = f.read()
+
+            if "[Profile]" not in profile:
+                profile = "[Profile]\n" + profile
+            lines = profile.splitlines()
+            has_im_name = False
+            has_enabled_list = False
+            for index, line in enumerate(lines):
+                if line.startswith("IMName="):
+                    lines[index] = "IMName=sogoupinyin"
+                    has_im_name = True
+                elif line.startswith("EnabledIMList="):
+                    value = line.split("=", 1)[1]
+                    items = [item for item in value.split(",") if item]
+                    filtered = [item for item in items if not item.startswith("sogoupinyin:") and not item.startswith("fcitx-keyboard-us:")]
+                    lines[index] = "EnabledIMList=sogoupinyin:True,fcitx-keyboard-us:False" + ("," + ",".join(filtered) if filtered else "")
+                    has_enabled_list = True
+            if not has_im_name:
+                lines.append("IMName=sogoupinyin")
+            if not has_enabled_list:
+                lines.append("EnabledIMList=sogoupinyin:True,fcitx-keyboard-us:False")
+            with open(profile_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+
+            config = ""
+            if os.path.exists(config_path):
+                with open(config_path, "r", encoding="utf-8", errors="ignore") as f:
+                    config = f.read()
+            if "DefaultInputMethodState=" in config:
+                config = re.sub(r"(?m)^#?DefaultInputMethodState=.*$", "DefaultInputMethodState=Active", config)
+            else:
+                if "[Program]" not in config:
+                    config += "\n[Program]\n"
+                config += "DefaultInputMethodState=Active\n"
+            with open(config_path, "w", encoding="utf-8") as f:
+                f.write(config)
+
+            if user != "root":
+                CmdTask("sudo chown -R {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(fcitx_dir)), 0).run()
+            PrintUtils.print_success("已将 fcitx 当前输入法设置为 sogoupinyin。")
+        except Exception as exc:
+            PrintUtils.print_warn("设置 fcitx 当前输入法为 sogoupinyin 失败: {}".format(exc))
         return True
 
     def _start_fcitx_nonblocking(self, user, home):

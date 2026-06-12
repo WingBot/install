@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+### 自动切换搜狗为当前 fcitx 输入法
+
+- 搜狗输入法安装后自动把 `~/.config/fcitx/profile` 中的 `IMName` 设置为 `sogoupinyin`。
+- 自动确保 `EnabledIMList` 中 `sogoupinyin` 启用，减少只停留在 `fcitx-keyboard-us` 导致无法输入中文的问题。
+- 自动把 fcitx 默认输入法状态设置为 `Active`。
+
 ### 修复搜狗输入法 fcitx 启动崩溃
 
 - 不再通过 `CmdTask` 直接运行 `fcitx -r -d`，避免 fcitx daemon 持有输出管道导致安装器 `ret_code` 缺失崩溃。
