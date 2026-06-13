@@ -48,8 +48,15 @@ class Tool(BaseTool):
 
     def _local_proxy_available(self, host, port):
         try:
-            with socket.create_connection((host, port), timeout=0.3):
-                return True
+            with socket.create_connection((host, port), timeout=1.0) as conn:
+                conn.settimeout(1.0)
+                conn.sendall(
+                    b"CONNECT github.com:443 HTTP/1.1\r\n"
+                    b"Host: github.com:443\r\n"
+                    b"Proxy-Connection: close\r\n\r\n"
+                )
+                response = conn.recv(128)
+            return b" 200 " in response.split(b"\r\n", 1)[0]
         except OSError:
             return False
 
@@ -242,15 +249,15 @@ class Tool(BaseTool):
 
     def _write_config(self, remote_port):
         proxy_name = self._proxy_name()
-        config = """[common]
-server_addr = {server_addr}
-server_port = {server_port}
+        config = """serverAddr = "{server_addr}"
+serverPort = {server_port}
 
-[{proxy_name}]
-type = tcp
-local_ip = 127.0.0.1
-local_port = {local_port}
-remote_port = {remote_port}
+[[proxies]]
+name = "{proxy_name}"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = {local_port}
+remotePort = {remote_port}
 """.format(
             server_addr=FRP_SERVER_ADDR,
             server_port=FRP_SERVER_PORT,
@@ -258,16 +265,17 @@ remote_port = {remote_port}
             local_port=LOCAL_SSH_PORT,
             remote_port=remote_port,
         )
-        temp_config = "/tmp/frpc.ini"
+        temp_config = "/tmp/frpc.toml"
         with open(temp_config, "w", encoding="utf-8") as f:
             f.write(config)
 
         CmdTask("sudo mkdir -p /etc/frp", 0).run()
-        result = CmdTask("sudo install -m 0644 {} /etc/frp/frpc.ini".format(temp_config), 0).run()
+        result = CmdTask("sudo install -m 0644 {} /etc/frp/frpc.toml".format(temp_config), 0).run()
         if result[0] != 0:
-            PrintUtils.print_error("写入 /etc/frp/frpc.ini 失败。")
+            PrintUtils.print_error("写入 /etc/frp/frpc.toml 失败。")
             return False
-        PrintUtils.print_success("frpc 配置已写入 /etc/frp/frpc.ini，代理名: {}".format(proxy_name))
+        CmdTask("sudo rm -f /etc/frp/frpc.ini", 0).run()
+        PrintUtils.print_success("frpc 配置已写入 /etc/frp/frpc.toml，代理名: {}".format(proxy_name))
         return True
 
     def _write_service(self):
@@ -280,7 +288,7 @@ Wants=network-online.target
 [Service]
 User={user}
 Type=simple
-ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.ini
+ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
 Restart=always
 RestartSec=3s
 KillMode=process
@@ -301,7 +309,7 @@ WantedBy=multi-user.target
         CmdTask("sudo systemctl daemon-reload", 0).run()
         enable_result = CmdTask("sudo systemctl enable --now frpc", 0).run()
         if enable_result[0] != 0:
-            PrintUtils.print_error("frpc 服务启动失败，请检查 /etc/frp/frpc.ini 和 journalctl -u frpc。")
+            PrintUtils.print_error("frpc 服务启动失败，请检查 /etc/frp/frpc.toml 和 journalctl -u frpc。")
             return False
         return True
 

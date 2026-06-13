@@ -1,3 +1,10 @@
+## 2026-06-13 12:46:49 +0800 - frpc 改用 TOML 配置并修正本地代理误判
+
+- frpc 配置文件从已弃用的 `/etc/frp/frpc.ini` 改为 `/etc/frp/frpc.toml`。
+- frpc systemd 服务改为执行 `frpc -c /etc/frp/frpc.toml`，安装时会清理旧 ini 配置。
+- 本地代理自动检测不再只判断 `127.0.0.1:7897` 端口是否打开，而是要求 HTTP CONNECT `github.com:443` 返回 200，避免未开启系统代理时误报“检测到本地代理”。
+- 同步修正 RustDesk、frpc、Chrome、Node.js、Zellij、搜狗输入法和办公套件工具的本地代理检测逻辑。
+
 ## 2026-06-13 12:38:16 +0800 - frpc 安装时自动启用 SSH Server
 
 - frpc SSH 内网穿透安装流程新增 `openssh-server` 安装步骤。

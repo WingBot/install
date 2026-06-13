@@ -51,8 +51,15 @@ class Tool(BaseTool):
 
     def _local_proxy_available(self, host, port):
         try:
-            with socket.create_connection((host, port), timeout=0.3):
-                return True
+            with socket.create_connection((host, port), timeout=1.0) as conn:
+                conn.settimeout(1.0)
+                conn.sendall(
+                    b"CONNECT github.com:443 HTTP/1.1\r\n"
+                    b"Host: github.com:443\r\n"
+                    b"Proxy-Connection: close\r\n\r\n"
+                )
+                response = conn.recv(128)
+            return b" 200 " in response.split(b"\r\n", 1)[0]
         except OSError:
             return False
 
