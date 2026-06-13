@@ -1,3 +1,9 @@
+## 2026-06-13 12:38:16 +0800 - frpc 安装时自动启用 SSH Server
+
+- frpc SSH 内网穿透安装流程新增 `openssh-server` 安装步骤。
+- 自动启用并启动 `ssh` 服务，必要时回退尝试 `sshd` 服务名。
+- 在 SSH 服务确认 active 后再继续分配远端端口、安装 frpc 和写入 systemd 服务，避免远端端口打通但本机 22 端口不可用。
+
 ## 2026-06-13 12:10:27 +0800 - 代理工具优先使用自有安装包
 
 - 科学上网代理工具安装包优先从 `INSTALL_BASE_URL/packages/` 下载，失败后再回退 `repo.trojan-cdn.com`。

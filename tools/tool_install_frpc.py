@@ -121,6 +121,33 @@ class Tool(BaseTool):
         PrintUtils.print_error("{}-{} 范围内没有找到可用远端端口。".format(REMOTE_PORT_START, REMOTE_PORT_END))
         return None
 
+    def _ensure_ssh_server(self):
+        PrintUtils.print_info("正在安装并启动 OpenSSH Server...")
+        install_result = CmdTask("sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server", 0).run()
+        if install_result[0] != 0:
+            PrintUtils.print_warn("openssh-server 安装失败，尝试先更新 apt 缓存后重试。")
+            CmdTask("sudo apt-get update", 0).run()
+            install_result = CmdTask("sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server", 0).run()
+            if install_result[0] != 0:
+                PrintUtils.print_error("openssh-server 安装失败，无法保证 frpc SSH 映射可用。")
+                return False
+
+        enable_result = CmdTask("sudo systemctl enable --now ssh", 0).run()
+        if enable_result[0] != 0:
+            PrintUtils.print_warn("启动 ssh 服务失败，尝试使用 sshd 服务名。")
+            enable_result = CmdTask("sudo systemctl enable --now sshd", 0).run()
+            if enable_result[0] != 0:
+                PrintUtils.print_error("SSH 服务启动失败，请检查 systemctl status ssh 或 sshd。")
+                return False
+
+        check_result = CmdTask("systemctl is-active --quiet ssh || systemctl is-active --quiet sshd", 0).run()
+        if check_result[0] != 0:
+            PrintUtils.print_error("SSH 服务未处于 active 状态，frpc 启动后可能无法连接本机 22 端口。")
+            return False
+
+        PrintUtils.print_success("OpenSSH Server 已安装并设置开机自启。")
+        return True
+
     def _download_file(self, url, target_path):
         PrintUtils.print_info("下载地址: {}".format(url))
         request = urllib.request.Request(url, headers={"User-Agent": "office-install/1.0"})
@@ -284,6 +311,9 @@ WantedBy=multi-user.target
 
         frp_url = self._latest_frp_url()
         if frp_url is None:
+            return False
+
+        if not self._ensure_ssh_server():
             return False
 
         remote_port = self._allocate_remote_port()
