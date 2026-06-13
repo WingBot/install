@@ -9,14 +9,15 @@ echo "Downloading: ${INSTALL_BASE_URL%/}/install.py"
 wget --show-progress --progress=bar:force:noscroll "${INSTALL_BASE_URL%/}/install.py" -O "$OFFICE_INSTALL_TMP_DIR/install.py"
 source /etc/profile
 
-SUDO=''
 if [ "$UID" -ne 0 ]; then
-    SUDO='sudo'
+    sudo apt install python3-distro python3-yaml -y
+    sudo --preserve-env=INSTALL_BASE_URL,OFFICE_INSTALL_TMP_DIR python3 "$OFFICE_INSTALL_TMP_DIR/install.py"
+    sudo rm -rf "$OFFICE_INSTALL_TMP_DIR"
+else
+    apt install python3-distro python3-yaml -y
+    python3 "$OFFICE_INSTALL_TMP_DIR/install.py"
+    rm -rf "$OFFICE_INSTALL_TMP_DIR"
 fi
-
-$SUDO apt install python3-distro python3-yaml -y
-$SUDO --preserve-env=INSTALL_BASE_URL,OFFICE_INSTALL_TMP_DIR python3 "$OFFICE_INSTALL_TMP_DIR/install.py"
-$SUDO rm -rf "$OFFICE_INSTALL_TMP_DIR"
 
 # 初始假设默认是 Bash
 shell_name='bash'

@@ -1,3 +1,9 @@
+## 2026-06-13 11:37:59 +0800 - 修复 root 用户运行公网入口脚本失败
+
+- 修复 `root` 用户直接执行 `bash /tmp/office-install` 时，入口脚本把 `--preserve-env=INSTALL_BASE_URL,OFFICE_INSTALL_TMP_DIR` 当作命令执行的问题。
+- 非 root 用户仍通过 `sudo --preserve-env` 保留公网部署所需的 `INSTALL_BASE_URL` 和临时目录环境变量。
+- 服务器 `/srv/office-install` 部署后可直接用 `INSTALL_BASE_URL=http://install.todobot.org:8080/ bash /tmp/office-install` 启动安装器。
+
 # Changelog
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
