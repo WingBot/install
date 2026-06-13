@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import os
 import pwd
@@ -203,6 +204,102 @@ class Tool(BaseTool):
             0,
         ).run()
 
+    def _decoded_server_config(self):
+        try:
+            raw = base64.b64decode(RUSTDESK_CONFIG[::-1]).decode("utf-8")
+            config = json.loads(raw)
+        except Exception as exc:
+            PrintUtils.print_warn("解析 RustDesk 服务器配置失败: {}".format(exc))
+            return None
+
+        return {
+            "host": str(config.get("host", "")).strip(),
+            "relay": str(config.get("relay", "")).strip(),
+            "api": str(config.get("api", "")).strip(),
+            "key": str(config.get("key", "")).strip(),
+        }
+
+    def _toml_quote(self, value):
+        return json.dumps(value, ensure_ascii=False)
+
+    def _upsert_toml_options(self, path, options):
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                lines = f.read().splitlines()
+        else:
+            lines = []
+
+        top_level = {"rendezvous_server": options["host"]}
+        option_keys = {
+            "custom-rendezvous-server": options["host"],
+            "relay-server": options["relay"],
+            "api-server": options["api"],
+            "key": options["key"],
+        }
+
+        def update_section(section_name, values, source_lines):
+            output = []
+            in_section = section_name is None
+            seen = set()
+            section_found = section_name is None
+            for line in source_lines:
+                stripped = line.strip()
+                if stripped.startswith("[") and stripped.endswith("]"):
+                    if in_section:
+                        for key, value in values.items():
+                            if key not in seen:
+                                output.append("{} = {}".format(key, self._toml_quote(value)))
+                    in_section = stripped == section_name
+                    section_found = section_found or in_section
+                    seen = set() if in_section else seen
+                    output.append(line)
+                    continue
+
+                if in_section and "=" in stripped and not stripped.startswith("#"):
+                    key = stripped.split("=", 1)[0].strip()
+                    if key in values:
+                        output.append("{} = {}".format(key, self._toml_quote(values[key])))
+                        seen.add(key)
+                        continue
+                output.append(line)
+
+            if not section_found and section_name is not None:
+                if output and output[-1].strip():
+                    output.append("")
+                output.append(section_name)
+                for key, value in values.items():
+                    output.append("{} = {}".format(key, self._toml_quote(value)))
+            elif in_section:
+                for key, value in values.items():
+                    if key not in seen:
+                        output.append("{} = {}".format(key, self._toml_quote(value)))
+            return output
+
+        lines = update_section(None, top_level, lines)
+        lines = update_section("[options]", option_keys, lines)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines).rstrip() + "\n")
+
+    def _write_config_files(self):
+        options = self._decoded_server_config()
+        if not options or not options["host"]:
+            return False
+
+        user, home = self._target_user()
+        config_dir = os.path.join(home, ".config", "rustdesk")
+        paths = [
+            os.path.join(config_dir, "RustDesk2.toml"),
+            os.path.join(config_dir, "RustDesk.toml"),
+        ]
+        for path in paths:
+            self._upsert_toml_options(path, options)
+            if user != "root":
+                CmdTask("sudo chown {}:{} {}".format(shlex.quote(user), shlex.quote(user), shlex.quote(path)), 0).run()
+
+        PrintUtils.print_success("RustDesk 配置文件已写入: {}".format(", ".join(paths)))
+        return True
+
     def _choose_action(self):
         actions = {
             1: "安装或重装 RustDesk，并导入配置和固定密码",
@@ -296,20 +393,22 @@ class Tool(BaseTool):
 
         import_result = self._run_as_target_user("rustdesk --config {}".format(config_arg))
         if import_result[0] == 0:
-            PrintUtils.print_success("RustDesk 已为用户 {} 导入 ID/中继服务器配置。".format(user))
+            PrintUtils.print_success("RustDesk 已为用户 {} 执行配置导入命令。".format(user))
+            config_written = self._write_config_files()
             CmdTask("sudo systemctl restart rustdesk", 0).run()
-            return True
+            return config_written
 
         PrintUtils.print_warn("用户态导入 RustDesk 配置失败，尝试使用 sudo 导入。")
         import_result = CmdTask(
             "sudo rustdesk --config {}".format(config_arg), 0
         ).run()
-        if import_result[0] != 0:
+        config_written = self._write_config_files()
+        if import_result[0] != 0 and not config_written:
             PrintUtils.print_error("RustDesk 服务器配置导入失败，请打开 RustDesk 后手动导入配置。")
             return False
 
         CmdTask("sudo systemctl restart rustdesk", 0).run()
-        PrintUtils.print_success("RustDesk 已导入 ID/中继服务器配置。")
+        PrintUtils.print_success("RustDesk 已导入并写入 ID/中继服务器配置。")
         return True
 
     def _target_username(self):

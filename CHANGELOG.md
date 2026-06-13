@@ -1,3 +1,9 @@
+## 2026-06-13 23:47:38 +0800 - RustDesk 配置导入增加文件写入兜底
+
+- RustDesk 导入串会解析为服务器配置，并写入目标用户 `~/.config/rustdesk/RustDesk2.toml`。
+- 同步写入兼容文件 `~/.config/rustdesk/RustDesk.toml`，包含 `rendezvous_server` 和 `[options]` 中的 `custom-rendezvous-server`、`relay-server`、`api-server`、`key`。
+- 避免 `rustdesk --config` 返回成功但 UI 实际未加载 ID/中继服务器配置的问题。
+
 ## 2026-06-13 23:29:20 +0800 - 改进 zsh 默认 shell 和 RustDesk 配置导入
 
 - Oh My Zsh 安装后确认 zsh 写入 `/etc/shells`，并校验目标用户默认登录 shell 已切换为 zsh。
