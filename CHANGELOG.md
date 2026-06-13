@@ -1,3 +1,9 @@
+## 2026-06-13 23:29:20 +0800 - 改进 zsh 默认 shell 和 RustDesk 配置导入
+
+- Oh My Zsh 安装后确认 zsh 写入 `/etc/shells`，并校验目标用户默认登录 shell 已切换为 zsh。
+- RustDesk 配置导入改为优先以实际目标用户执行，避免 `sudo rustdesk --config` 把 ID/中继配置写入 root 用户配置。
+- RustDesk 固定密码设置同样优先目标用户执行，失败后再回退 sudo，并在导入配置前后重启 rustdesk 服务。
+
 ## 2026-06-13 23:17:52 +0800 - 简化公网入口命令
 
 - README 将公网测试入口改为一行命令，先下载 `/tmp/office-install`，成功后再设置 `INSTALL_BASE_URL` 执行。

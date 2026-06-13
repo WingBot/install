@@ -153,6 +153,22 @@ alias l='ls -CF'
         PrintUtils.print_success("Oh My Zsh 默认配置已写入: {}".format(zshrc_path))
         return True
 
+    def _ensure_zsh_in_shells(self, zsh_path):
+        try:
+            with open("/etc/shells", "r", encoding="utf-8") as f:
+                shells = [line.strip() for line in f if line.strip()]
+        except OSError:
+            shells = []
+
+        if zsh_path in shells:
+            return True
+
+        result = CmdTask("printf '%s\n' {} | sudo tee -a /etc/shells >/dev/null".format(shlex.quote(zsh_path)), 0).run()
+        if result[0] != 0:
+            PrintUtils.print_warn("无法写入 /etc/shells，chsh 可能失败: {}".format(zsh_path))
+            return False
+        return True
+
     def _set_default_shell(self):
         user, _ = self._target_user()
         zsh_path_result = CmdTask("command -v zsh", 0).run()
@@ -165,14 +181,25 @@ alias l='ls -CF'
             PrintUtils.print_warn("未找到 zsh 可执行文件，跳过默认 shell 设置。")
             return True
 
+        self._ensure_zsh_in_shells(zsh_path)
+
         if user == "root":
-            result = CmdTask("chsh -s {}".format(shlex.quote(zsh_path)), 0).run()
+            result = CmdTask("chsh -s {} root".format(shlex.quote(zsh_path)), 0).run()
         else:
             result = CmdTask("sudo chsh -s {} {}".format(shlex.quote(zsh_path), shlex.quote(user)), 0).run()
         if result[0] != 0:
-            PrintUtils.print_warn("默认 shell 设置失败，可稍后手动执行: chsh -s {}".format(zsh_path))
+            PrintUtils.print_warn("默认 shell 设置失败，可稍后手动执行: sudo chsh -s {} {}".format(zsh_path, user))
             return True
-        PrintUtils.print_success("已将默认 shell 设置为: {}".format(zsh_path))
+
+        try:
+            current_shell = pwd.getpwnam(user).pw_shell
+        except KeyError:
+            current_shell = ""
+        if current_shell != zsh_path:
+            PrintUtils.print_warn("默认 shell 设置后校验不一致，当前为: {}".format(current_shell or "未知"))
+            return True
+
+        PrintUtils.print_success("已将 {} 的默认 shell 设置为: {}".format(user, zsh_path))
         return True
 
     def run(self):

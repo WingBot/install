@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import pwd
 import sys
 import time
 import shlex
@@ -179,6 +180,29 @@ class Tool(BaseTool):
             return False
         return True
 
+    def _target_user(self):
+        username = os.environ.get("SUDO_USER") or os.environ.get("LOGNAME") or os.environ.get("USER") or "root"
+        if username == "root":
+            return "root", "/root"
+        try:
+            info = pwd.getpwnam(username)
+            return username, info.pw_dir
+        except KeyError:
+            return username, os.path.expanduser("~" + username)
+
+    def _run_as_target_user(self, command):
+        user, home = self._target_user()
+        if user == "root":
+            return CmdTask("HOME={} {}".format(shlex.quote(home), command), 0).run()
+        return CmdTask(
+            "sudo -u {user} HOME={home} XDG_CONFIG_HOME={home}/.config {command}".format(
+                user=shlex.quote(user),
+                home=shlex.quote(home),
+                command=command,
+            ),
+            0,
+        ).run()
+
     def _choose_action(self):
         actions = {
             1: "安装或重装 RustDesk，并导入配置和固定密码",
@@ -266,18 +290,30 @@ class Tool(BaseTool):
             PrintUtils.print_error("未找到 rustdesk 命令，无法导入服务器配置。")
             return False
 
+        config_arg = shlex.quote(RUSTDESK_CONFIG)
+        user, _ = self._target_user()
+        CmdTask("sudo systemctl restart rustdesk", 0).run()
+
+        import_result = self._run_as_target_user("rustdesk --config {}".format(config_arg))
+        if import_result[0] == 0:
+            PrintUtils.print_success("RustDesk 已为用户 {} 导入 ID/中继服务器配置。".format(user))
+            CmdTask("sudo systemctl restart rustdesk", 0).run()
+            return True
+
+        PrintUtils.print_warn("用户态导入 RustDesk 配置失败，尝试使用 sudo 导入。")
         import_result = CmdTask(
-            "sudo rustdesk --config {}".format(shlex.quote(RUSTDESK_CONFIG)), 0
+            "sudo rustdesk --config {}".format(config_arg), 0
         ).run()
         if import_result[0] != 0:
             PrintUtils.print_error("RustDesk 服务器配置导入失败，请打开 RustDesk 后手动导入配置。")
             return False
 
+        CmdTask("sudo systemctl restart rustdesk", 0).run()
         PrintUtils.print_success("RustDesk 已导入 ID/中继服务器配置。")
         return True
 
     def _target_username(self):
-        username = os.environ.get("SUDO_USER") or os.environ.get("LOGNAME") or os.environ.get("USER") or "user"
+        username, _ = self._target_user()
         if username == "root":
             username = "user"
         return username[:1].upper() + username[1:]
@@ -287,9 +323,11 @@ class Tool(BaseTool):
 
     def _set_permanent_password(self):
         password = self._fixed_password()
-        result = CmdTask(
-            "sudo rustdesk --password {}".format(shlex.quote(password)), 0
-        ).run()
+        result = self._run_as_target_user("rustdesk --password {}".format(shlex.quote(password)))
+        if result[0] != 0:
+            result = CmdTask(
+                "sudo rustdesk --password {}".format(shlex.quote(password)), 0
+            ).run()
         if result[0] != 0:
             PrintUtils.print_error("RustDesk 固定密码设置失败，请确认 RustDesk 已安装并正在运行服务。")
             return False
