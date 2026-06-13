@@ -70,8 +70,13 @@ https://repo.trojan-cdn.com/mihomo-party/...
 第一阶段推荐客户端流程：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+```
+
+当前 `install.todobot.org:8080` 实测入口：
+
+```bash
+no_proxy=install.todobot.org,156.239.236.24,127.0.0.1,localhost NO_PROXY=install.todobot.org,156.239.236.24,127.0.0.1,localhost bash -c 'wget --no-proxy -O /tmp/office-install http://install.todobot.org:8080/install && INSTALL_BASE_URL=http://install.todobot.org:8080/ bash /tmp/office-install'
 ```
 
 然后在菜单中选择：
@@ -216,8 +221,7 @@ curl -I http://install.example.com/tools/base.py
 测试电脑运行：
 
 ```bash
-wget -O /tmp/office-install http://install.example.com/install
-INSTALL_BASE_URL=http://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install http://install.example.com/install && INSTALL_BASE_URL=http://install.example.com/ bash /tmp/office-install
 ```
 
 ## 第一阶段：配置 HTTPS
@@ -237,8 +241,7 @@ sudo certbot renew --dry-run
 HTTPS 可用后，测试电脑运行：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
 ```
 
 如果希望像 FishROS 一样入口脚本默认就使用自己的域名，可以修改项目根目录 `install` 中的默认值：
@@ -344,8 +347,7 @@ proxy_status
 后续再运行安装器：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
 ```
 
 此时需要访问 GitHub 的 Python 下载工具会优先读取 `http_proxy`、`https_proxy`、`all_proxy`，或自动检测本地 `127.0.0.1:7897` 代理。
@@ -643,8 +645,7 @@ https://pkg.example.com/packages/google-chrome-stable_current_amd64.deb
 第一阶段基础验证：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install
-INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
 ```
 
 如果客户端已经开启 Clash/TUN，访问公网域名通常不需要 `no_proxy`。只有访问局域网 IP 时才需要显式绕过代理。

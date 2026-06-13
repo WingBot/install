@@ -122,18 +122,13 @@ python3 -m http.server 18080
 确认测试电脑能访问该服务。假设服务电脑 IP 是 `192.168.1.10`，在测试电脑上运行：
 
 ```bash
-wget -O /tmp/office-install http://192.168.1.10:18080/install
-INSTALL_BASE_URL=http://192.168.1.10:18080/ bash /tmp/office-install
+wget --no-proxy -O /tmp/office-install http://192.168.1.10:18080/install && INSTALL_BASE_URL=http://192.168.1.10:18080/ bash /tmp/office-install
 ```
 
 如果测试电脑开启了 Clash、系统代理或 TUN，访问局域网安装器时建议显式绕过代理。假设服务电脑 IP 是 `192.168.5.218`：
 
 ```bash
-no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install
-```
-
-```bash
-no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost bash -c 'wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install && INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install'
 ```
 
 进入菜单后选择 `19`，测试基础工具包安装链路。
@@ -150,24 +145,23 @@ no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,loca
 如果 `office` 分支已经推送到 GitHub，可以在测试电脑上运行：
 
 ```bash
-wget -O /tmp/office-install https://raw.githubusercontent.com/WingBot/install/office/install
-INSTALL_BASE_URL=https://raw.githubusercontent.com/WingBot/install/office/ bash /tmp/office-install
+wget -O /tmp/office-install https://raw.githubusercontent.com/WingBot/install/office/install && INSTALL_BASE_URL=https://raw.githubusercontent.com/WingBot/install/office/ bash /tmp/office-install
 ```
 
 这种方式适合快速验证 GitHub 上的当前分支，但测试电脑需要能访问 GitHub Raw。
 
 ### 方式三：用公网域名测试
 
-当后续部署了真实域名，例如 `https://install.example.com/`，测试命令可以变成：
+当前公网入口推荐使用一行命令：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+no_proxy=install.todobot.org,156.239.236.24,127.0.0.1,localhost NO_PROXY=install.todobot.org,156.239.236.24,127.0.0.1,localhost bash -c 'wget --no-proxy -O /tmp/office-install http://install.todobot.org:8080/install && INSTALL_BASE_URL=http://install.todobot.org:8080/ bash /tmp/office-install'
 ```
 
-如果入口脚本里的默认 `INSTALL_BASE_URL` 已经改成真实域名，也可以直接运行：
+如果测试电脑没有开启系统代理，也可以使用更短版本：
 
 ```bash
-wget -O /tmp/office-install https://install.example.com/install && bash /tmp/office-install
+wget -O /tmp/office-install http://install.todobot.org:8080/install && INSTALL_BASE_URL=http://install.todobot.org:8080/ bash /tmp/office-install
 ```
 
 公网服务器、HTTPS、安装器静态分发、GitHub 反向代理和软件包缓存的完整部署步骤见：[公网服务器部署指引](DEPLOY_PUBLIC_SERVER.md)。
@@ -323,14 +317,10 @@ sed -i 's/^simplified_ui .*/simplified_ui true/; s/^pane_frames .*/pane_frames f
 
 ### 开启代理后局域网地址被代理
 
-如果测试电脑开启了 Clash 系统代理或 TUN，`wget http://192.168.x.x:18080/install` 可能会被送进代理，表现为连接 `127.0.0.1:7897` 后返回 `502 Bad Gateway`。这种情况下先不要用一行 `wget ... && INSTALL_BASE_URL=... bash ...`，建议分两步执行并显式设置 `no_proxy/NO_PROXY`：
+如果测试电脑开启了 Clash 系统代理或 TUN，`wget http://192.168.x.x:18080/install` 可能会被送进代理，表现为连接 `127.0.0.1:7897` 后返回 `502 Bad Gateway`。这种情况下使用下面的一行命令，让下载入口和安装器内部下载都显式走 `no_proxy/NO_PROXY`：
 
 ```bash
-no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install
-```
-
-```bash
-no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install
+no_proxy=192.168.5.218,127.0.0.1,localhost NO_PROXY=192.168.5.218,127.0.0.1,localhost bash -c 'wget --no-proxy -O /tmp/office-install http://192.168.5.218:18080/install && INSTALL_BASE_URL=http://192.168.5.218:18080/ bash /tmp/office-install'
 ```
 
 如果服务端 IP 不是 `192.168.5.218`，把命令里的 IP 全部替换成实际服务端 IP。

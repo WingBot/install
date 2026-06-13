@@ -1,3 +1,9 @@
+## 2026-06-13 23:17:52 +0800 - 简化公网入口命令
+
+- README 将公网测试入口改为一行命令，先下载 `/tmp/office-install`，成功后再设置 `INSTALL_BASE_URL` 执行。
+- 推荐命令加入 `no_proxy/NO_PROXY` 和 `wget --no-proxy`，避免测试机开启系统代理时入口请求被代理转发。
+- 部署文档同步补充 `install.todobot.org:8080` 当前实测入口。
+
 ## 2026-06-13 19:46:14 +0800 - 代理安装包改为服务器本地托管
 
 - 从 Git 追踪中移除 `packages/Clash.Verge_2.4.6_amd64.deb` 和 `packages/mix-clash.yaml`，避免仓库携带大包和代理配置文件。
