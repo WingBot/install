@@ -188,6 +188,12 @@ tools = {
         "tool": "tools/tool_install_office_suite.py",
         "dep": [19],
     },
+    29: {
+        "tip": "一键安装:截图和录屏工具(Flameshot/Peek/ffmpeg)",
+        "type": INSTALL_SOFTWARE,
+        "tool": "tools/tool_install_desktop_capture.py",
+        "dep": [19],
+    },
 }
 
 

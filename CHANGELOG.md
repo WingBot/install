@@ -1,3 +1,9 @@
+## 2026-06-14 00:05:08 +0800 - 新增截图和录屏工具安装项
+
+- 新增菜单项：截图和录屏工具，安装 Flameshot、Peek、ffmpeg 等桌面辅助工具。
+- Flameshot 和 ffmpeg 作为必需包安装；Peek、GNOME Screenshot、SimpleScreenRecorder、剪贴板工具和 ImageMagick 按 apt 源可用性安装。
+- 如果当前 Ubuntu/Debian 源未提供 Peek，安装器会提示跳过，不阻断 Flameshot 和 ffmpeg 安装。
+
 ## 2026-06-13 23:54:48 +0800 - VS Code 安装输出改为可见流式输出
 
 - VS Code 下载改为 Python 流式下载进度，避免 `CmdTask` 进度条刷新导致终端清屏。
