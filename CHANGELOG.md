@@ -2,9 +2,15 @@
 
 本文记录 `office` 分支从 FishROS 安装器改造成办公软件安装器的主要提交和设计意图。
 
+## 2026-06-13 09:31:02 +0800 - Split public deployment into phases
+
+- 将公网部署文档移动到项目根目录 `DEPLOY_PUBLIC_SERVER.md`。
+- 部署方案改为两阶段：第一阶段只部署入口静态站点和域名，先安装 Clash/代理工具；第二阶段再配置 GitHub 反向代理和软件包缓存。
+- README 中公网部署文档链接同步更新到根目录路径。
+
 ## 2026-06-13 09:14:41 +0800 - Add public server deployment guide
 
-- 新增 `docs/deploy-public-server.md`，说明如何用公网 IP 和域名部署安装器静态分发服务。
+- 新增公网部署文档，说明如何用公网 IP 和域名部署安装器静态分发服务。
 - 增加 Nginx、Certbot、DNS、项目同步、HTTPS 测试和客户端运行命令。
 - 增加 GitHub Raw/Release 反向代理示例，支持白名单、公网 IP 校验、HEAD/GET 和大文件流式中转。
 - 增加自托管软件包缓存站点方案，便于把常用 `.deb`、`.tar.gz` 放到自有域名下载。

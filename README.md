@@ -170,7 +170,7 @@ wget -O /tmp/office-install https://install.example.com/install && INSTALL_BASE_
 wget -O /tmp/office-install https://install.example.com/install && bash /tmp/office-install
 ```
 
-公网服务器、HTTPS、安装器静态分发、GitHub 反向代理和软件包缓存的完整部署步骤见：[公网服务器部署指引](docs/deploy-public-server.md)。
+公网服务器、HTTPS、安装器静态分发、GitHub 反向代理和软件包缓存的完整部署步骤见：[公网服务器部署指引](DEPLOY_PUBLIC_SERVER.md)。
 
 ## 安装器 HTTP 服务和软件源的关系
 

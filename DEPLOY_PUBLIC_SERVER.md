@@ -1,20 +1,25 @@
 # 公网服务器部署指引
 
-本文说明如何把本项目部署到有公网 IP 和域名的云服务器上，使测试电脑不依赖系统代理即可下载并运行安装器；同时提供类似 FishROS 的 GitHub 反向代理/下载中转能力。
+本文说明如何把本项目部署到有公网 IP 和域名的云服务器上。推荐分两阶段推进：
+
+1. 第一阶段：只部署安装器入口和脚本静态站点，让测试电脑不依赖系统代理即可打开安装器；Clash/代理工具安装包沿用当前 FishROS 风格的 `repo.trojan-cdn.com` 下载源。安装 Clash 后，开启系统代理，再继续安装需要 GitHub 的工具。
+2. 第二阶段：再增加 GitHub 反向代理和自托管软件包缓存，让 GitHub Raw、GitHub Release、大文件安装包也能通过自己的域名中转。
+
+这样可以先跑通最短链路，避免一开始同时处理 HTTPS、反向代理、安全限制、包缓存等多个变量。
 
 示例域名：
 
 ```text
-install.example.com      安装器静态文件
-github.example.com       GitHub 反向代理
-pkg.example.com          自托管软件包缓存
+install.example.com      第一阶段：安装器静态文件
+github.example.com       第二阶段：GitHub 反向代理
+pkg.example.com          第二阶段：自托管软件包缓存
 ```
 
 实际部署时把示例域名替换为自己的域名。
 
-## 目标结构
+## 总体目标结构
 
-推荐把“安装器脚本分发”和“第三方下载中转”分开：
+推荐把“安装器脚本分发”和“第三方下载中转”分开。第一阶段只实现 `install.example.com`；第二阶段再实现 `github.example.com` 和 `pkg.example.com`。
 
 ```text
 测试电脑
@@ -39,30 +44,78 @@ pkg.example.com
 其中：
 
 - `install.example.com` 只托管本项目文件，供 `INSTALL_BASE_URL` 使用。
-- `github.example.com` 作为 GitHub/Raw/Release 的反向代理，解决测试电脑直连 GitHub 不稳定的问题。
+- `github.example.com` 作为 GitHub Raw/Release 的反向代理，解决测试电脑直连 GitHub 不稳定的问题。
 - `pkg.example.com` 用来放体积较大的固定软件包，例如 `.deb`、`.tar.gz`，避免每次都从国外源下载。
 
-## DNS 配置
+## 阶段选择
+
+### 第一阶段先做什么
+
+第一阶段只要求：
+
+- 域名 `install.example.com` 指向云服务器。
+- Nginx 能托管本项目文件。
+- 测试电脑能运行 `wget https://install.example.com/install`。
+- 进入安装器后能选择“科学上网代理工具”，下载并安装 Clash Verge Rev 或 mihomo-party。
+
+当前代理工具安装脚本的包地址是：
+
+```text
+https://repo.trojan-cdn.com/clash-verge-rev/...
+https://repo.trojan-cdn.com/mihomo-party/...
+```
+
+这类下载源不依赖 GitHub。安装完成后，导入订阅、开启系统代理或 TUN，再继续运行安装器。项目中 RustDesk、frpc、Zellij、Obsidian 等工具已经有本地代理检测逻辑，检测到 `127.0.0.1:7897` 或环境变量代理后会优先使用代理下载 GitHub 资源。
+
+第一阶段推荐客户端流程：
+
+```bash
+wget -O /tmp/office-install https://install.example.com/install
+INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+```
+
+然后在菜单中选择：
+
+```text
+[14] 一键安装:科学上网代理工具
+```
+
+Clash 安装并配置好后，再重新执行安装器安装其他工具。
+
+### 第二阶段再做什么
+
+第二阶段再补：
+
+- `github.example.com`：GitHub Raw / GitHub Release 中转。
+- `pkg.example.com`：自托管固定安装包缓存。
+- 工具脚本中的 GitHub 下载 URL 可以逐步改成优先走中转，失败再回源。
+
+这样即使目标电脑没有系统代理，也能通过你的云服务器中转一部分 GitHub 下载。
+
+## 第一阶段：DNS 配置
 
 在域名服务商处增加 A 记录：
 
 ```text
 install.example.com  A  你的公网服务器 IP
-github.example.com   A  你的公网服务器 IP
-pkg.example.com      A  你的公网服务器 IP
 ```
 
 等待解析生效后，在本地或服务器上检查：
 
 ```bash
 dig +short install.example.com
-dig +short github.example.com
-dig +short pkg.example.com
 ```
 
 如果测试电脑开启 Clash TUN 并看到 `198.18.x.x`，这是 Clash fake-ip，不代表真实服务器 IP。用浏览器或 `curl -I` 看 HTTP 响应更可靠。
 
-## 服务器准备
+第二阶段再增加：
+
+```text
+github.example.com   A  你的公网服务器 IP
+pkg.example.com      A  你的公网服务器 IP
+```
+
+## 第一阶段：服务器准备
 
 以下命令以 Ubuntu/Debian 云服务器为例：
 
@@ -75,8 +128,7 @@ sudo apt install -y nginx certbot python3-certbot-nginx git rsync
 
 ```bash
 sudo mkdir -p /srv/office-install
-sudo mkdir -p /srv/office-packages/packages
-sudo chown -R "$USER":"$USER" /srv/office-install /srv/office-packages
+sudo chown -R "$USER":"$USER" /srv/office-install
 ```
 
 开放安全组和防火墙：
@@ -88,7 +140,7 @@ sudo ufw allow 443/tcp
 
 云厂商控制台也要放行 80 和 443。
 
-## 同步项目文件
+## 第一阶段：同步项目文件
 
 方式一：服务器直接拉 GitHub 仓库。
 
@@ -114,7 +166,7 @@ rsync -av --delete \
   user@your-server:/srv/office-install/
 ```
 
-## 配置安装器静态站点
+## 第一阶段：配置安装器静态站点
 
 新建 Nginx 配置：
 
@@ -168,7 +220,7 @@ wget -O /tmp/office-install http://install.example.com/install
 INSTALL_BASE_URL=http://install.example.com/ bash /tmp/office-install
 ```
 
-## 配置 HTTPS
+## 第一阶段：配置 HTTPS
 
 申请证书：
 
@@ -201,7 +253,51 @@ export INSTALL_BASE_URL="${INSTALL_BASE_URL:-https://install.example.com/}"
 wget -O /tmp/office-install https://install.example.com/install && bash /tmp/office-install
 ```
 
-## 配置 GitHub 反向代理
+## 第一阶段：安装 Clash 并开启代理
+
+第一阶段不强制配置 GitHub 中转。先使用当前菜单中的代理工具安装入口：
+
+```text
+[14] 一键安装:科学上网代理工具
+```
+
+当前脚本提供两个选项：
+
+```text
+1. 有界面版: Clash Verge Rev
+2. 无界面版(按提供源): mihomo-party
+```
+
+安装包下载源沿用 FishROS 风格的独立下载域名：
+
+```text
+https://repo.trojan-cdn.com/clash-verge-rev/...
+https://repo.trojan-cdn.com/mihomo-party/...
+```
+
+安装完成后：
+
+1. 启动 Clash Verge Rev 或 mihomo-party。
+2. 导入订阅。
+3. 开启系统代理或 TUN。
+4. 如需终端显式代理，执行安装器写入的快捷命令：
+
+```bash
+source ~/.bashrc
+proxy_add
+proxy_status
+```
+
+后续再运行安装器：
+
+```bash
+wget -O /tmp/office-install https://install.example.com/install
+INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
+```
+
+此时需要访问 GitHub 的 Python 下载工具会优先读取 `http_proxy`、`https_proxy`、`all_proxy`，或自动检测本地 `127.0.0.1:7897` 代理。
+
+## 第二阶段：配置 GitHub 反向代理
 
 ### 基本原理
 
@@ -432,7 +528,7 @@ https://github.example.com/https://github.com/fatedier/frp/releases/download/v0.
 
 注意：GitHub Release 经常 302 跳转到 `release-assets.githubusercontent.com`。上面的 Python 中转会跟随跳转，测试电脑只需要访问你的 `github.example.com`。
 
-## 配置软件包缓存站点
+## 第二阶段：配置软件包缓存站点
 
 如果某些安装包经常用、体积大或源站不稳定，建议直接缓存到自己的服务器。
 
@@ -491,7 +587,7 @@ https://pkg.example.com/packages/google-chrome-stable_current_amd64.deb
 
 ## 客户端验证命令
 
-基础验证：
+第一阶段基础验证：
 
 ```bash
 wget -O /tmp/office-install https://install.example.com/install
@@ -500,19 +596,19 @@ INSTALL_BASE_URL=https://install.example.com/ bash /tmp/office-install
 
 如果客户端已经开启 Clash/TUN，访问公网域名通常不需要 `no_proxy`。只有访问局域网 IP 时才需要显式绕过代理。
 
-验证 GitHub 中转：
+第二阶段验证 GitHub 中转：
 
 ```bash
 wget -O /tmp/office-install "https://github.example.com/https://raw.githubusercontent.com/WingBot/install/office/install"
 ```
 
-验证大文件中转：
+第二阶段验证大文件中转：
 
 ```bash
 wget -O /tmp/frp.tar.gz "https://github.example.com/https://github.com/fatedier/frp/releases/download/v0.69.1/frp_0.69.1_linux_amd64.tar.gz"
 ```
 
-验证自托管包：
+第二阶段验证自托管包：
 
 ```bash
 wget -O /tmp/test.deb https://pkg.example.com/packages/google-chrome-stable_current_amd64.deb
