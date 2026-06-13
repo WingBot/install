@@ -7,6 +7,7 @@ import re
 import shlex
 import shutil
 import socket
+import subprocess
 import sys
 import tarfile
 import time
@@ -49,6 +50,66 @@ class Tool(BaseTool):
             return result[1]
         return []
 
+    def _system_proxy_candidates(self):
+        candidates = []
+        explicit_proxy = os.environ.get("OFFICE_INSTALL_PROXY")
+        if explicit_proxy:
+            candidates.append(explicit_proxy)
+
+        try:
+            mode = subprocess.run(
+                ["gsettings", "get", "org.gnome.system.proxy", "mode"],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1,
+            ).stdout.strip().strip("'")
+            if mode == "manual":
+                for schema in ["http", "https"]:
+                    host = subprocess.run(
+                        ["gsettings", "get", "org.gnome.system.proxy.{}".format(schema), "host"],
+                        check=False,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        text=True,
+                        timeout=1,
+                    ).stdout.strip().strip("'")
+                    port_text = subprocess.run(
+                        ["gsettings", "get", "org.gnome.system.proxy.{}".format(schema), "port"],
+                        check=False,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        text=True,
+                        timeout=1,
+                    ).stdout.strip()
+                    if host and port_text.isdigit() and int(port_text) > 0:
+                        candidates.append("http://{}:{}".format(host, port_text))
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+        for port in [7897, 7890, 7891, 7892]:
+            candidates.append("http://127.0.0.1:{}".format(port))
+
+        deduped = []
+        seen = set()
+        for candidate in candidates:
+            if candidate not in seen:
+                seen.add(candidate)
+                deduped.append(candidate)
+        return deduped
+
+    def _detect_local_proxy_url(self):
+        for proxy_url in self._system_proxy_candidates():
+            parsed = urlparse(proxy_url)
+            host = parsed.hostname
+            port = parsed.port
+            if parsed.scheme not in ["http", "https"] or not host or not port:
+                continue
+            if self._local_proxy_available(host, port):
+                return proxy_url
+        return None
+
     def _local_proxy_available(self, host, port):
         try:
             with socket.create_connection((host, port), timeout=1.0) as conn:
@@ -79,10 +140,11 @@ class Tool(BaseTool):
             proxies.setdefault("http", all_proxy)
             proxies.setdefault("https", all_proxy)
 
-        if not proxies and self._local_proxy_available("127.0.0.1", 7897):
-            proxy_url = "http://127.0.0.1:7897"
-            proxies = {"http": proxy_url, "https": proxy_url}
-            PrintUtils.print_info("检测到本地代理，下载将使用: {}".format(proxy_url))
+        if not proxies:
+            proxy_url = self._detect_local_proxy_url()
+            if proxy_url:
+                proxies = {"http": proxy_url, "https": proxy_url}
+                PrintUtils.print_info("检测到本地代理，下载将使用: {}".format(proxy_url))
 
         if proxies:
             return urllib.request.build_opener(urllib.request.ProxyHandler(proxies))

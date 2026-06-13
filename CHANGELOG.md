@@ -1,3 +1,10 @@
+## 2026-06-13 15:20:22 +0800 - 扩展系统代理自动检测
+
+- 下载工具优先读取 `http_proxy`、`https_proxy`、`all_proxy` 环境变量。
+- 环境变量不存在时，自动读取 GNOME 系统代理 `gsettings org.gnome.system.proxy` 的 manual 配置。
+- 系统代理仍未命中时，依次探测 `127.0.0.1` 的 `7897/7890/7891/7892` 常见 Clash HTTP 端口。
+- 探测仍要求 HTTP CONNECT `github.com:443` 返回 200，避免普通本地端口被误判为代理。
+
 ## 2026-06-13 12:46:49 +0800 - frpc 改用 TOML 配置并修正本地代理误判
 
 - frpc 配置文件从已弃用的 `/etc/frp/frpc.ini` 改为 `/etc/frp/frpc.toml`。
