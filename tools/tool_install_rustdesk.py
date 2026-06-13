@@ -7,7 +7,7 @@ import shlex
 import socket
 import urllib.request
 
-from .base import BaseTool, CmdTask, PrintUtils, osarch
+from .base import BaseTool, CmdTask, PrintUtils, ChooseTask, osarch
 
 
 RUSTDESK_CONFIG = "=0nI9AjRvNXTkllVqdmaRdzbHB1QndWYNhnUFl0ZoxWeDFzNItiTWFEb2RlYZtiI6ISeltmIsIiI6ISawFmIsIiI6ISehxWZyJCLiYTMxEjM6YTMuUDNuUTNx4COiojI0N3boJye"
@@ -108,6 +108,15 @@ class Tool(BaseTool):
             PrintUtils.print_error("当前会话无法无交互使用 sudo，请在终端中运行安装器并输入 sudo 密码后重试。")
             return False
         return True
+
+    def _choose_action(self):
+        actions = {
+            1: "安装或重装 RustDesk，并导入配置和固定密码",
+            2: "仅修复 RustDesk 配置、固定密码和开机自启",
+            3: "卸载 RustDesk 并清理当前用户配置",
+        }
+        code, _ = ChooseTask(actions, "请选择 RustDesk 操作:", False).run()
+        return code
 
     def _download_file(self, url, target_path):
         PrintUtils.print_info("下载地址: {}".format(url))
@@ -256,7 +265,33 @@ class Tool(BaseTool):
             return False
         return self._set_permanent_password()
 
+    def _repair_config(self):
+        if not self._check_sudo():
+            return False
+
+        rustdesk_bin = CmdTask("command -v rustdesk", 0).run()
+        if rustdesk_bin[0] != 0:
+            PrintUtils.print_error("未检测到 RustDesk，请先选择安装或重装。")
+            return False
+
+        self._enable_autostart()
+        if not self._import_config():
+            return False
+        return self._set_permanent_password()
+
     def run(self):
         if self.mode == "uninstall":
             return self._uninstall()
-        return self._install()
+        if self.mode == "repair":
+            return self._repair_config()
+
+        action = self._choose_action()
+        if action == 1:
+            return self._install()
+        if action == 2:
+            return self._repair_config()
+        if action == 3:
+            return self._uninstall()
+
+        PrintUtils.print_warn("已取消 RustDesk 操作")
+        return False

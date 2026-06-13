@@ -141,18 +141,10 @@ tools = {
         "dep": [],
     },
     20: {
-        "tip": "一键安装并配置:RustDesk远程控制",
+        "tip": "一键管理:RustDesk远程控制(安装/修复配置/卸载)",
         "type": INSTALL_OFFICE,
         "tool": "tools/tool_install_rustdesk.py",
         "dep": [19],
-        "mode": "install",
-    },
-    21: {
-        "tip": "一键卸载:RustDesk远程控制(含用户配置)",
-        "type": CONFIG_TOOL,
-        "tool": "tools/tool_install_rustdesk.py",
-        "dep": [],
-        "mode": "uninstall",
     },
     22: {
         "tip": "一键安装并配置:frpc SSH内网穿透",

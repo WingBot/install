@@ -268,11 +268,40 @@ wget -O /tmp/office-install https://install.example.com/install && bash /tmp/off
 2. 无界面版(按提供源): mihomo-party
 ```
 
-安装包下载源沿用 FishROS 风格的独立下载域名：
+安装包下载优先使用自有服务器 `packages/` 目录，失败后再回退 FishROS 风格的独立下载域名：
 
 ```text
+{INSTALL_BASE_URL}/packages/Clash.Verge_2.4.6_amd64.deb
+{INSTALL_BASE_URL}/packages/mihomo-party-linux-1.9.2-amd64.deb
 https://repo.trojan-cdn.com/clash-verge-rev/...
 https://repo.trojan-cdn.com/mihomo-party/...
+```
+
+这样可以避免无代理测试机直连 `repo.trojan-cdn.com` 时先等 IPv6 超时、再慢速下载的问题。
+
+在本地仓库准备 amd64 安装包：
+
+```bash
+mkdir -p packages
+wget -4 --show-progress --progress=bar:force:noscroll -O packages/Clash.Verge_2.4.6_amd64.deb "https://repo.trojan-cdn.com/clash-verge-rev/Clash%20Verge%20Rev%20v2.4.6/Clash.Verge_2.4.6_amd64.deb"
+wget -4 --show-progress --progress=bar:force:noscroll -O packages/mihomo-party-linux-1.9.2-amd64.deb "https://repo.trojan-cdn.com/mihomo-party/v1.9.2/mihomo-party-linux-1.9.2-amd64.deb"
+ls -lh packages
+```
+
+确认文件不是 0 字节后提交并推送：
+
+```bash
+git add packages/Clash.Verge_2.4.6_amd64.deb packages/mihomo-party-linux-1.9.2-amd64.deb
+git commit -m "Add proxy tool packages"
+git push
+```
+
+服务器更新：
+
+```bash
+cd /srv/office-install
+git pull --ff-only
+curl -I http://install.todobot.org:8080/packages/Clash.Verge_2.4.6_amd64.deb
 ```
 
 安装完成后：

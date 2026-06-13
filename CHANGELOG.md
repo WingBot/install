@@ -1,3 +1,10 @@
+## 2026-06-13 12:10:27 +0800 - 代理工具优先使用自有安装包
+
+- 科学上网代理工具安装包优先从 `INSTALL_BASE_URL/packages/` 下载，失败后再回退 `repo.trojan-cdn.com`。
+- 下载 Clash/mihomo 包时强制 IPv4、显示进度并设置超时，避免无代理测试机先等待 IPv6 超时。
+- RustDesk 主菜单合并为管理入口，进入后可选择安装/重装、修复配置和固定密码、卸载。
+- 部署文档补充 `packages/` 目录准备、提交、服务器拉取和验证步骤。
+
 ## 2026-06-13 11:37:59 +0800 - 修复 root 用户运行公网入口脚本失败
 
 - 修复 `root` 用户直接执行 `bash /tmp/office-install` 时，入口脚本把 `--preserve-env=INSTALL_BASE_URL,OFFICE_INSTALL_TMP_DIR` 当作命令执行的问题。

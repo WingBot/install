@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import shlex
 from urllib.parse import quote
 
 from .base import BaseTool
@@ -60,7 +61,7 @@ class Tool(BaseTool):
             file_name = filename_map[osarch]
             return (
                 "Clash Verge Rev",
-                "{}/{}".format(self.CLASH_VERGE_BASE, file_name),
+                self._package_urls(self.CLASH_VERGE_BASE, file_name),
                 file_name,
             )
 
@@ -72,20 +73,41 @@ class Tool(BaseTool):
             file_name = filename_map[osarch]
             return (
                 "mihomo-party",
-                "{}/{}".format(self.MIHOMO_PARTY_BASE, file_name),
+                self._package_urls(self.MIHOMO_PARTY_BASE, file_name),
                 file_name,
             )
 
         return None, None, None
 
-    def _install_deb_package(self, package_url):
+    def _package_urls(self, upstream_base, file_name):
+        urls = []
+        install_base_url = os.environ.get("INSTALL_BASE_URL", "").strip()
+        if install_base_url:
+            urls.append(
+                "{}/packages/{}".format(install_base_url.rstrip("/"), quote(file_name))
+            )
+        urls.append("{}/{}".format(upstream_base, quote(file_name)))
+        return urls
+
+    def _download_deb_package(self, package_urls, temp_file):
+        for index, package_url in enumerate(package_urls):
+            source_name = "自有服务器" if index == 0 and "/packages/" in package_url else "FishROS 源"
+            PrintUtils.print_info("下载源({}): {}".format(source_name, package_url))
+            cmd = (
+                "wget -4 --no-proxy --show-progress --progress=bar:force:noscroll "
+                "--timeout=60 --tries=2 {} -O {}"
+            ).format(shlex.quote(package_url), shlex.quote(temp_file))
+            download = self._run_cmd(cmd, 180, "下载代理工具安装包中...")
+            if self._code(download) == 0:
+                return True
+            PrintUtils.print_warn("当前下载源失败，尝试下一个下载源。")
+
+        return False
+
+    def _install_deb_package(self, package_urls):
         temp_file = "/tmp/fishros_proxy_tool.deb"
-        download = self._run_cmd(
-            'wget --no-proxy "{}" -O "{}"'.format(package_url, temp_file),
-            300,
-            "下载代理工具安装包中...",
-        )
-        if self._code(download) != 0:
+        self._run_cmd('rm -f "{}"'.format(temp_file), 10)
+        if not self._download_deb_package(package_urls, temp_file):
             return False
 
         install = self._run_cmd(
@@ -229,14 +251,14 @@ class Tool(BaseTool):
             PrintUtils.print_warn("已取消安装")
             return False
 
-        package_name, package_url, file_name = self._resolve_package(mode)
+        package_name, package_urls, file_name = self._resolve_package(mode)
         if package_name is None:
             PrintUtils.print_error("当前仅支持 amd64/arm64 架构")
             return False
 
         PrintUtils.print_info("当前架构: {}".format(osarch))
         PrintUtils.print_info("准备安装: {} ({})".format(package_name, file_name))
-        if not self._install_deb_package(package_url):
+        if not self._install_deb_package(package_urls):
             PrintUtils.print_error("安装失败，请检查网络、系统软件源或依赖修复状态")
             return False
 
