@@ -1,3 +1,9 @@
+## 2026-06-13 19:46:14 +0800 - 代理安装包改为服务器本地托管
+
+- 从 Git 追踪中移除 `packages/Clash.Verge_2.4.6_amd64.deb` 和 `packages/mix-clash.yaml`，避免仓库携带大包和代理配置文件。
+- `.gitignore` 增加 `packages/*.deb`、`packages/*.yaml` 等包文件忽略规则。
+- 部署文档改为推荐 `/srv/office-install-packages/` 服务器本地包目录，并通过 nginx `/packages/` alias 对外提供下载。
+
 ## 2026-06-13 15:20:22 +0800 - 扩展系统代理自动检测
 
 - 下载工具优先读取 `http_proxy`、`https_proxy`、`all_proxy` 环境变量。

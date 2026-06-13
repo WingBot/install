@@ -1,2 +1,9 @@
 *.pyc
 tests/test_local
+# Local server package cache; do not commit large installers or private configs.
+packages/*.deb
+packages/*.tar.gz
+packages/*.zip
+packages/*.AppImage
+packages/*.yaml
+packages/*.yml

@@ -279,29 +279,53 @@ https://repo.trojan-cdn.com/mihomo-party/...
 
 这样可以避免无代理测试机直连 `repo.trojan-cdn.com` 时先等 IPv6 超时、再慢速下载的问题。
 
-在本地仓库准备 amd64 安装包：
+代理工具安装包不提交到 Git 仓库，放到服务器本地包目录。先在服务器创建目录：
 
 ```bash
-mkdir -p packages
-wget -4 --show-progress --progress=bar:force:noscroll -O packages/Clash.Verge_2.4.6_amd64.deb "https://repo.trojan-cdn.com/clash-verge-rev/Clash%20Verge%20Rev%20v2.4.6/Clash.Verge_2.4.6_amd64.deb"
-wget -4 --show-progress --progress=bar:force:noscroll -O packages/mihomo-party-linux-1.9.2-amd64.deb "https://repo.trojan-cdn.com/mihomo-party/v1.9.2/mihomo-party-linux-1.9.2-amd64.deb"
-ls -lh packages
+sudo mkdir -p /srv/office-install-packages
+sudo chown -R "$USER":"$USER" /srv/office-install-packages
 ```
 
-确认文件不是 0 字节后提交并推送：
+如果服务器当前 `/srv/office-install/packages/` 里已经有包，在拉取删除包的提交前先复制出去：
 
 ```bash
-git add packages/Clash.Verge_2.4.6_amd64.deb packages/mihomo-party-linux-1.9.2-amd64.deb
-git commit -m "Add proxy tool packages"
-git push
+cp -a /srv/office-install/packages/Clash.Verge_2.4.6_amd64.deb /srv/office-install-packages/
+cp -a /srv/office-install/packages/mix-clash.yaml /srv/office-install-packages/
 ```
 
-服务器更新：
+也可以直接在服务器本地包目录下载：
+
+```bash
+cd /srv/office-install-packages
+wget -4 --show-progress --progress=bar:force:noscroll -O Clash.Verge_2.4.6_amd64.deb "https://repo.trojan-cdn.com/clash-verge-rev/Clash%20Verge%20Rev%20v2.4.6/Clash.Verge_2.4.6_amd64.deb"
+wget -4 --show-progress --progress=bar:force:noscroll -O mihomo-party-linux-1.9.2-amd64.deb "https://repo.trojan-cdn.com/mihomo-party/v1.9.2/mihomo-party-linux-1.9.2-amd64.deb"
+ls -lh /srv/office-install-packages
+```
+
+在 `install.todobot.org:8080` 对应的 nginx `server` 块中增加：
+
+```nginx
+location /packages/ {
+    alias /srv/office-install-packages/;
+    autoindex off;
+    try_files $uri =404;
+}
+```
+
+重新加载 nginx：
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+服务器更新仓库代码：
 
 ```bash
 cd /srv/office-install
 git pull --ff-only
 curl -I http://install.todobot.org:8080/packages/Clash.Verge_2.4.6_amd64.deb
+curl -I http://install.todobot.org:8080/packages/mix-clash.yaml
 ```
 
 安装完成后：
