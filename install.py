@@ -194,6 +194,12 @@ tools = {
         "tool": "tools/tool_install_desktop_capture.py",
         "dep": [19],
     },
+    30: {
+        "tip": "一键安装:Termius SSH客户端",
+        "type": INSTALL_NETWORK,
+        "tool": "tools/tool_install_termius.py",
+        "dep": [19],
+    },
 }
 
 
