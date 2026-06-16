@@ -305,14 +305,45 @@ wget -4 --show-progress --progress=bar:force:noscroll -O mihomo-party-linux-1.9.
 ls -lh /srv/office-install-packages
 ```
 
-在 `install.todobot.org:8080` 对应的 nginx `server` 块中增加：
+在 `install.todobot.org:8080` 对应的 nginx `server` 块中增加本地包目录和字体目录映射：
 
 ```nginx
-location /packages/ {
+location ^~ /packages/ {
     alias /srv/office-install-packages/;
     autoindex off;
-    try_files $uri =404;
 }
+
+location ^~ /fonts/ {
+    alias /srv/Fonts/;
+    autoindex off;
+}
+```
+
+`/srv/Fonts` 用来放 Windows 字体压缩包。安装器默认会依次尝试：
+
+```text
+http://install.todobot.org:8080/fonts/WindowsFonts.tar.gz
+http://install.todobot.org:8080/fonts/WindowsFonts.tgz
+http://install.todobot.org:8080/fonts/WindowsFonts.zip
+http://install.todobot.org:8080/fonts/windows-fonts.tar.gz
+http://install.todobot.org:8080/fonts/windows-fonts.zip
+http://install.todobot.org:8080/fonts/Fonts.tar.gz
+http://install.todobot.org:8080/fonts/Fonts.zip
+```
+
+建议把 Windows 字体目录打包为其中一个文件名，例如：
+
+```bash
+sudo mkdir -p /srv/Fonts
+sudo chown -R "$USER":"$USER" /srv/Fonts
+cd /path/to/Windows
+sudo tar -czf /srv/Fonts/WindowsFonts.tar.gz Fonts
+```
+
+如果文件名不在默认列表里，客户端运行安装器时可指定：
+
+```bash
+WINDOWS_FONTS_URL=http://install.todobot.org:8080/fonts/你的字体包.tar.gz bash /tmp/office-install
 ```
 
 重新加载 nginx：
@@ -329,6 +360,7 @@ cd /srv/office-install
 git pull --ff-only
 curl -I http://install.todobot.org:8080/packages/Clash.Verge_2.4.6_amd64.deb
 curl -I http://install.todobot.org:8080/packages/mix-clash.yaml
+curl -I http://install.todobot.org:8080/fonts/WindowsFonts.tar.gz
 ```
 
 安装完成后：

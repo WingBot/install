@@ -1,3 +1,9 @@
+## 2026-06-16 11:58:42 +0800 - Windows 字体支持服务器字体包导入
+
+- 办公套件字体安装新增服务器字体包下载，默认从 `INSTALL_BASE_URL/fonts/WindowsFonts.tar.gz` 等路径尝试导入。
+- 支持 `WINDOWS_FONTS_URL` 指定自定义 Windows 字体压缩包地址。
+- 部署文档补充 nginx `/fonts/` 到服务器 `/srv/Fonts/` 的 alias 配置和字体包验证命令。
+
 ## 2026-06-16 09:44:39 +0800 - 新增 Termius 安装项
 
 - 新增菜单项：Termius SSH 客户端。

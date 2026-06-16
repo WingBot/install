@@ -12,6 +12,7 @@ import sys
 import tarfile
 import time
 import urllib.request
+import zipfile
 from urllib.parse import urlparse
 
 from .base import BaseTool, CmdTask, PrintUtils, ChooseTask, osarch
@@ -509,10 +510,13 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
 
         self._write_office_font_aliases()
         copied = self._copy_windows_fonts()
+        downloaded = self._download_server_windows_fonts()
         self._run_cmd("fc-cache -f", 0, "刷新当前用户字体缓存...")
         self._run_cmd("sudo fc-cache -f", 0, "刷新系统字体缓存...")
         if copied > 0:
             PrintUtils.print_success("已导入本机 Windows 字体 {} 个文件。".format(copied))
+        if downloaded > 0:
+            PrintUtils.print_success("已从服务器字体包导入 Windows 字体 {} 个文件。".format(downloaded))
         PrintUtils.print_success("中文字体和 Windows 常用字体安装流程完成。")
         return True
 
@@ -628,6 +632,100 @@ Comment=Zotero is a free, easy-to-use tool to help you collect, organize, cite, 
             PrintUtils.print_warn("未发现可直接导入的 Windows 字体目录，已跳过本机 Windows 字体复制。")
             PrintUtils.print_info("请先在文件管理器中挂载 Windows 系统盘，或运行时指定: WINDOWS_FONTS_DIR=/路径/Windows/Fonts")
         return copied
+
+    def _server_font_archive_urls(self):
+        env_url = os.environ.get("WINDOWS_FONTS_URL")
+        if env_url:
+            return [item.strip() for item in env_url.split(",") if item.strip()]
+
+        install_base_url = os.environ.get("INSTALL_BASE_URL", "").strip()
+        if not install_base_url:
+            return []
+
+        base = install_base_url.rstrip("/")
+        names = [
+            "WindowsFonts.tar.gz",
+            "WindowsFonts.tgz",
+            "WindowsFonts.zip",
+            "windows-fonts.tar.gz",
+            "windows-fonts.zip",
+            "Fonts.tar.gz",
+            "Fonts.zip",
+        ]
+        return ["{}/fonts/{}".format(base, name) for name in names]
+
+    def _safe_extract_zip(self, archive, target_dir):
+        target_dir = os.path.abspath(target_dir)
+        for member in archive.namelist():
+            member_path = os.path.abspath(os.path.join(target_dir, member))
+            if not member_path.startswith(target_dir + os.sep):
+                raise RuntimeError("zip archive contains unsafe path: {}".format(member))
+        archive.extractall(target_dir)
+
+    def _copy_font_files_from_dir(self, source_dir, target_dir):
+        copied = 0
+        os.makedirs(target_dir, exist_ok=True)
+        for root, _, files in os.walk(source_dir):
+            for name in files:
+                if not name.lower().endswith((".ttf", ".ttc", ".otf")):
+                    continue
+                src = os.path.join(root, name)
+                dst = os.path.join(target_dir, name)
+                try:
+                    if not os.path.exists(dst):
+                        shutil.copy2(src, dst)
+                        copied += 1
+                except OSError:
+                    pass
+        return copied
+
+    def _download_server_windows_fonts(self):
+        urls = self._server_font_archive_urls()
+        if not urls:
+            return 0
+
+        home = self._target_home()
+        target_dir = os.path.join(home, ".local", "share", "fonts", "windows")
+        archive_path = "/tmp/windows-fonts-archive"
+        extract_dir = "/tmp/windows-fonts-extract"
+
+        for url in urls:
+            self._run_cmd("rm -rf {} {} {}.part".format(archive_path, extract_dir, archive_path), 0)
+            PrintUtils.print_info("尝试下载服务器 Windows 字体包: {}".format(url))
+            if not self._download_file(url, archive_path, 360, use_proxy=False):
+                continue
+
+            os.makedirs(extract_dir, exist_ok=True)
+            try:
+                lower_url = url.lower()
+                if lower_url.endswith(".zip"):
+                    with zipfile.ZipFile(archive_path) as archive:
+                        self._safe_extract_zip(archive, extract_dir)
+                else:
+                    with tarfile.open(archive_path, "r:*") as archive:
+                        self._safe_extract(archive, extract_dir)
+            except Exception as exc:
+                PrintUtils.print_warn("服务器 Windows 字体包解压失败: {}".format(exc))
+                continue
+
+            copied = self._copy_font_files_from_dir(extract_dir, target_dir)
+            user = self._target_user()
+            if user != "root":
+                self._run_cmd(
+                    "sudo chown -R {}:{} {}".format(
+                        shlex.quote(user), shlex.quote(user), shlex.quote(target_dir)
+                    ),
+                    0,
+                )
+            self._run_cmd("rm -rf {} {}".format(archive_path, extract_dir), 0)
+            if copied > 0:
+                PrintUtils.print_info("服务器 Windows 字体包来源: {}".format(url))
+                return copied
+            PrintUtils.print_info("服务器字体包已下载，但没有发现需要新增复制的字体文件。")
+            return 0
+
+        PrintUtils.print_warn("未能从服务器下载 Windows 字体包。可检查 /fonts/WindowsFonts.tar.gz 或设置 WINDOWS_FONTS_URL。")
+        return 0
 
     def run(self):
         choices = {
